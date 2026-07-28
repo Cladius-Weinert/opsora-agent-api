@@ -1,494 +1,1093 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opsora Agent API — Satu API. Semua AI.</title>
-<meta name="description" content="Akses 102+ model AI tercanggih dari satu endpoint. OpenAI-compatible. Bayar pakai QRIS. Mulai gratis.">
+<title>Opsora Agent API — One API. Every model.</title>
+<meta name="description" content="OpenAI-compatible AI gateway. 102 models from NVIDIA, Meta, Google, DeepSeek. Pay in your currency. Deploy in 3 lines.">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0A0A0F;--bg2:#111118;--card:#12121A;
-  --primary:#763AFF;--primary-light:#9B6AFF;--accent:#00C896;--gold:#FFAA00;--coral:#FF6B6B;
-  --text:#E8E8F0;--muted:#8888A0;--border:rgba(255,255,255,0.06);
-  --radius:16px;--radius-sm:10px;
-  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --mono:"SF Mono",SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
-a{color:inherit;text-decoration:none}
-img{max-width:100%;display:block}
-ul{list-style:none}
-table{border-collapse:collapse;width:100%}
-
-/* === LAYOUT === */
-.container{max-width:1120px;margin:0 auto;padding:0 24px}
-section{padding:80px 0}
-
-/* === TYPOGRAPHY === */
-.section-title{text-align:center;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:12px;letter-spacing:-0.02em}
-.section-sub{text-align:center;color:var(--muted);font-size:1.05rem;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto}
-
-/* === BUTTONS === */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 24px;border-radius:999px;font-weight:600;font-size:.9rem;border:none;cursor:pointer;transition:all .25s ease;text-decoration:none;white-space:nowrap}
-.btn-primary{background:var(--accent);color:#0A0A0F}
-.btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,200,150,0.25)}
-.btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.18);color:#fff}
-.btn-outline:hover{border-color:var(--primary);background:rgba(118,58,255,0.08)}
-.btn-purple{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff}
-.btn-purple:hover{filter:brightness(1.15);transform:translateY(-1px);box-shadow:0 8px 24px rgba(118,58,255,0.3)}
-.btn-lg{padding:14px 32px;font-size:1.05rem}
-.btn-sm{padding:8px 18px;font-size:.82rem}
-.btn-block{width:100%}
-
-/* === NAV === */
-nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 0}
-nav .container{display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.2rem;color:#fff}
-.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#fff;flex-shrink:0}
-.nav-links{display:flex;align-items:center;gap:28px}
-.nav-links a:not(.btn){font-size:.88rem;color:var(--muted);transition:color .2s}
-.nav-links a:not(.btn):hover{color:#fff}
-@media(max-width:640px){
-  .nav-links a:not(.btn){display:none}
-  .nav-links .btn{padding:8px 18px;font-size:.82rem}
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* === HERO === */
-.hero{padding:80px 0 64px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(118,58,255,0.08) 0%,rgba(0,200,150,0.04) 40%,transparent 70%);pointer-events:none}
-.hero-content{position:relative;z-index:1}
-.badge-nvidia{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:999px;background:rgba(0,200,150,0.07);border:1px solid rgba(0,200,150,0.18);font-size:.82rem;color:var(--accent);margin-bottom:28px;font-weight:500}
-.badge-nvidia .dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse-dot 2s ease-in-out infinite}
-@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
-h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;line-height:1.08;letter-spacing:-0.03em;background:linear-gradient(135deg,#fff 0%,#c4b5fd 40%,var(--primary) 60%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px}
-.hero-sub{font-size:clamp(1rem,2.5vw,1.2rem);color:var(--muted);max-width:600px;margin:0 auto 32px;line-height:1.65}
-.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
-
-/* === CODE CARD === */
-.code-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;text-align:left;max-width:580px;margin:0 auto;overflow-x:auto;position:relative}
-.code-card code{font-family:var(--mono);font-size:.82rem;line-height:1.75;color:#d1d5db;display:block}
-.kw{color:#C084FC}.str{color:#34D399}.fn{color:#60A5FA}.cm{color:#6B7280;font-style:italic}.op{color:#F9A8D4}.num{color:#FCD34D}
-.code-card-header{display:flex;align-items:center;gap:6px;margin-bottom:16px}
-.code-dot{width:10px;height:10px;border-radius:50%}
-.code-dot:nth-child(1){background:#FF5F57}
-.code-dot:nth-child(2){background:#FEBC2E}
-.code-dot:nth-child(3){background:#28C840}
-
-/* === TRUST BAR === */
-.trust-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:24px;margin-top:36px;padding-top:28px;border-top:1px solid var(--border)}
-.trust-bar span{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.84rem;font-weight:500}
-
-/* === PROBLEM / SOLVE === */
-.ps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-bottom:16px}
-.ps-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:border-color .3s}
-.ps-card:hover{border-color:rgba(255,255,255,0.12)}
-.ps-icon{font-size:1.5rem;margin-bottom:10px;display:block}
-.ps-card strong{display:block;font-size:1rem;margin-bottom:4px}
-.ps-card p{color:var(--muted);font-size:.88rem;line-height:1.5}
-.ps-divider{text-align:center;font-size:2.2rem;color:var(--primary);margin:32px 0;opacity:.6}
-
-/* === MODEL CARDS === */
-.model-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
-.model-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .3s}
-.model-card:hover{border-color:rgba(118,58,255,0.3);box-shadow:0 0 32px rgba(118,58,255,0.06);transform:translateY(-2px)}
-.model-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
-.badge-green{background:rgba(0,200,150,0.12);color:var(--accent)}
-.badge-purple{background:rgba(118,58,255,0.12);color:#A78BFA}
-.badge-coral{background:rgba(255,107,107,0.12);color:var(--coral)}
-.badge-gold{background:rgba(255,170,0,0.12);color:var(--gold)}
-.model-name{font-size:1.1rem;font-weight:700;margin-bottom:3px;color:#fff}
-.model-engine{color:var(--muted);font-size:.83rem;margin-bottom:14px}
-.model-specs{display:flex;gap:10px;flex-wrap:wrap}
-.model-specs span{background:rgba(255,255,255,0.04);padding:4px 10px;border-radius:7px;font-size:.78rem;color:var(--muted);font-weight:500}
-
-/* === PRICING === */
-.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:start}
-.price-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 24px;position:relative;transition:all .3s}
-.price-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,0.25)}
-.price-card.featured{border:2px solid var(--primary);background:linear-gradient(170deg,rgba(118,58,255,0.06) 0%,var(--card) 60%);box-shadow:0 0 48px rgba(118,58,255,0.12);transform:scale(1.04)}
-.price-card.featured:hover{transform:scale(1.06)}
-.popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:5px 18px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-.price-name{font-size:1.1rem;font-weight:700;margin-bottom:4px;color:#fff}
-.price-amount{font-size:2.2rem;font-weight:800;margin-bottom:2px;color:#fff;letter-spacing:-0.02em}
-.price-amount small{font-size:.85rem;font-weight:400;color:var(--muted)}
-.price-daily{font-size:.8rem;color:var(--muted);margin-bottom:18px;line-height:1.4}
-.price-features{margin-bottom:22px}
-.price-features li{padding:6px 0;font-size:.88rem;display:flex;align-items:flex-start;gap:8px;color:#d1d5db}
-.price-features li::before{content:"✓";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
-.price-overage{font-size:.78rem;color:var(--muted);margin-bottom:18px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--border)}
-
-@media(max-width:960px){.pricing-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){
-  .pricing-grid{grid-template-columns:1fr}
-  .price-card.featured{transform:none}
-  .price-card.featured:hover{transform:translateY(-4px)}
+:root {
+  --lime: #BEFF00;
+  --purple: #763AFF;
+  --bg: #0A0A0F;
+  --bg-card: #111118;
+  --text: #E8E8F0;
+  --muted: #8888A0;
+  --border: #1E1E2A;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* === COMPARISON TABLE === */
-.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:var(--card)}
-.table-wrap table{font-size:.88rem}
-.table-wrap th,.table-wrap td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--border)}
-.table-wrap th{background:rgba(255,255,255,0.02);font-weight:600;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
-.table-wrap td:first-child{font-weight:600;color:#fff}
-.table-wrap tr:last-child td{border-bottom:none}
-.col-opsora{background:rgba(118,58,255,0.04)}
-.check-yes{color:var(--accent);font-weight:600}
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-/* === TABS === */
-.tabs{display:flex;gap:4px;margin-bottom:0;background:rgba(255,255,255,0.03);border-radius:10px 10px 0 0;padding:6px 6px 0;border:1px solid var(--border);border-bottom:none;max-width:640px;margin-left:auto;margin-right:auto}
-.tab-btn{padding:10px 20px;border-radius:8px 8px 0 0;font-size:.84rem;cursor:pointer;color:var(--muted);background:transparent;border:none;font-weight:500;font-family:var(--font);transition:all .2s}
-.tab-btn.active{background:var(--bg2);color:#A78BFA;font-weight:600}
-.tab-btn:hover:not(.active){color:#fff}
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-.code-card-tabbed{border-radius:0 0 var(--radius) var(--radius);margin:0 auto;max-width:640px;border-top:none}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
 
-/* === CTA SECTION === */
-.cta-section{text-align:center;padding:88px 0;position:relative}
-.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(118,58,255,0.06) 0%,transparent 70%);pointer-events:none}
-.cta-section h2{font-size:clamp(2rem,5vw,3rem);font-weight:800;margin-bottom:16px;letter-spacing:-0.02em;position:relative}
-.cta-section .cta-sub{color:var(--muted);margin-bottom:32px;font-size:1.05rem;position:relative}
-.cta-small{margin-top:18px;font-size:.85rem;color:var(--muted);position:relative}
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-/* === FOOTER === */
-footer{border-top:1px solid var(--border);padding:36px 0;text-align:center;color:var(--muted);font-size:.84rem}
-footer p{margin-bottom:4px}
-.footer-links{display:flex;justify-content:center;gap:24px;margin-top:14px;flex-wrap:wrap}
-.footer-links a{color:var(--muted);transition:color .2s;font-weight:500}
-.footer-links a:hover{color:#fff}
-.footer-powered{font-size:.78rem;margin-top:10px;opacity:.7}
+::selection {
+  background: var(--lime);
+  color: var(--bg);
+}
 
-/* === ANIMATIONS === */
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .65s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1)}
-.reveal.visible{opacity:1;transform:translateY(0)}
-.reveal-delay-1{transition-delay:.1s}
-.reveal-delay-2{transition-delay:.2s}
-.reveal-delay-3{transition-delay:.3s}
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
 
-/* === MOBILE === */
-@media(max-width:640px){
-  section{padding:56px 0}
-  .container{padding:0 18px}
-  .hero{padding:56px 0 48px}
-  .model-grid{grid-template-columns:1fr}
-  .ps-grid{grid-template-columns:1fr}
-  .table-wrap th,.table-wrap td{padding:10px 12px;font-size:.8rem}
-  .trust-bar{gap:16px}
-  .trust-bar span{font-size:.78rem}
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.nav-logo-mark {
+  width: 24px;
+  height: 24px;
+  background: var(--lime);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.nav-links a {
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.nav-cta {
+  background: var(--lime) !important;
+  color: var(--bg) !important;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.nav-cta:hover {
+  opacity: 0.85;
+  color: var(--bg) !important;
+}
+
+.nav-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 100px 0 80px;
+}
+
+.hero-label {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
+  letter-spacing: 0.02em;
+}
+
+.hero h1 {
+  font-family: var(--mono);
+  font-size: clamp(42px, 7vw, 72px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 28px;
+}
+
+.hero h1 .lime {
+  color: var(--lime);
+}
+
+.hero-sub {
+  font-family: var(--sans);
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+
+.hero-links {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 48px;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.hero-links a {
+  transition: opacity 0.15s;
+}
+
+.hero-links a:hover {
+  opacity: 0.75;
+}
+
+.hero-links .primary {
+  color: var(--lime);
+}
+
+.hero-links .secondary {
+  color: var(--muted);
+}
+
+.hero-stats {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+  letter-spacing: 0.01em;
+}
+
+/* ── SECTION TITLES ── */
+.section-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--lime);
+  margin-bottom: 40px;
+  letter-spacing: 0.02em;
+}
+
+section {
+  padding: 100px 0;
+}
+
+/* ── LIVE CODE DEMO ── */
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.demo-panel {
+  background: var(--bg-card);
+  padding: 24px;
+  position: relative;
+}
+
+.demo-panel-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.demo-panel pre {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.demo-panel pre .str { color: var(--lime); }
+.demo-panel pre .kw { color: var(--purple); }
+.demo-panel pre .cmt { color: var(--muted); }
+.demo-panel pre .status-ok { color: var(--lime); }
+.demo-panel pre .status-dim { color: var(--muted); }
+
+.copy-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.response-area {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.response-area.visible {
+  opacity: 1;
+}
+
+.demo-response-status {
+  font-family: var(--mono);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+/* ── HOW IT WORKS ── */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 20px;
+}
+
+.step-num {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.step h3 {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.step p {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.code-block {
+  background: var(--bg-card);
+  padding: 20px 24px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-x: auto;
+  position: relative;
+}
+
+.code-block .diff-del {
+  color: #ff6b6b;
+}
+
+.code-block .diff-add {
+  color: var(--lime);
+}
+
+.code-block .cmt {
+  color: var(--muted);
+}
+
+.code-block .str {
+  color: var(--lime);
+}
+
+.code-block .kw {
+  color: var(--purple);
+}
+
+.diagram-block {
+  background: var(--bg-card);
+  padding: 20px 24px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text);
+  overflow-x: auto;
+}
+
+.diagram-block .route-primary {
+  color: var(--lime);
+}
+
+.diagram-block .route-fallback {
+  color: var(--muted);
+}
+
+/* ── MODELS TABLE ── */
+.models-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.models-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 13px;
+  min-width: 700px;
+}
+
+.models-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 12px 14px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.models-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.models-table tr:last-child td {
+  border-bottom: none;
+}
+
+.models-table .model-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.models-table .model-engine {
+  color: var(--muted);
+}
+
+.models-table .model-best {
+  color: var(--muted);
+}
+
+.models-table .model-price {
+  color: var(--lime);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--lime);
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ── PRICING ── */
+.pricing-subtitle {
+  font-family: var(--sans);
+  font-size: 16px;
+  color: var(--muted);
+  margin-top: -28px;
+  margin-bottom: 32px;
+}
+
+.pricing-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.currency-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.currency-toggle button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.currency-toggle button.active {
+  background: var(--lime);
+  color: var(--bg);
+}
+
+.annual-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background: var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pricing-col {
+  background: var(--bg-card);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-col.recommended {
+  border-left: 2px solid var(--lime);
+}
+
+.pricing-rec-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--lime);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.pricing-plan {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pricing-price {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pricing-price .period {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.pricing-overage {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.pricing-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 16px;
+}
+
+.pricing-features {
+  list-style: none;
+  font-size: 13px;
+  color: var(--muted);
+  flex: 1;
+  margin-bottom: 24px;
+}
+
+.pricing-features li {
+  padding: 4px 0;
+  font-family: var(--sans);
+}
+
+.pricing-features li.highlight {
+  color: var(--text);
+}
+
+.pricing-link {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--lime);
+  transition: opacity 0.15s;
+}
+
+.pricing-link:hover {
+  opacity: 0.75;
+}
+
+/* ── WHY SWITCH ── */
+.claims {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.claim h3 {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.claim p {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.claim .provider-list {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* ── PLAYGROUND ── */
+.playground-subtitle {
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: -28px;
+  margin-bottom: 32px;
+}
+
+.pg-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pg-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  min-width: 180px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238888A0' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.pg-select:focus {
+  outline: 1px solid var(--muted);
+}
+
+.pg-run-btn {
+  background: var(--lime);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.pg-run-btn:hover {
+  opacity: 0.85;
+}
+
+.pg-run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pg-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 16px 20px;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 120px;
+  margin-bottom: 16px;
+}
+
+.pg-input:focus {
+  outline: 1px solid var(--muted);
+  border-color: var(--muted);
+}
+
+.pg-input::placeholder {
+  color: #44445a;
+}
+
+.pg-output {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  min-height: 100px;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  position: relative;
+}
+
+.pg-output.empty {
+  color: #44445a;
+  font-style: italic;
+}
+
+.pg-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--lime);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.pg-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+/* ── FINAL CTA ── */
+.final-cta {
+  text-align: center;
+  padding: 120px 0;
+}
+
+.final-cta h2 {
+  font-family: var(--mono);
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.final-cta .sub {
+  font-family: var(--sans);
+  font-size: 16px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+
+.final-cta .cta-link {
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--lime);
+  transition: opacity 0.15s;
+}
+
+.final-cta .cta-link:hover {
+  opacity: 0.75;
+}
+
+.final-cta .fine {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #55556a;
+  margin-top: 12px;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+}
+
+.footer-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-links a {
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.footer-links a:hover {
+  color: var(--text);
+}
+
+/* ── SCROLL ANIMATION ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+
+  .nav-links.open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: rgba(10, 10, 15, 0.98);
+    padding: 20px 24px;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-mobile-toggle {
+    display: block;
+  }
+
+  section {
+    padding: 60px 0;
+  }
+
+  .hero {
+    padding: 60px 0 48px;
+  }
+
+  .demo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .step {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .step-num {
+    font-size: 11px;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .final-cta {
+    padding: 80px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 36px;
+  }
+
+  .hero-links {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero-stats {
+    font-size: 12px;
+  }
+
+  .pg-controls {
+    flex-wrap: wrap;
+  }
+
+  .pg-select {
+    min-width: 0;
+    flex: 1;
+  }
 }
 </style>
 </head>
 <body>
 
-<!-- ====== NAV ====== -->
+<!-- NAV -->
 <nav>
-  <div class="container">
-    <a href="#" class="logo">
-      <span class="logo-icon">O</span>
-      <span>Opsora</span>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <span class="nav-logo-mark">O</span>
+      opsora
     </a>
+    <button class="nav-mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
     <div class="nav-links">
-      <a href="#models">Model</a>
-      <a href="#pricing">Harga</a>
-      <a href="#quickstart">Playground</a>
-      <a href="#quickstart">Docs</a>
-      <a href="#cta" class="btn btn-primary btn-sm">Mulai Gratis</a>
+      <a href="#models">Models</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#playground">Docs</a>
+      <a href="#" class="nav-cta">Get API key</a>
     </div>
   </div>
 </nav>
 
-<!-- ====== HERO ====== -->
+<!-- HERO -->
 <section class="hero">
-  <div class="container hero-content">
-    <div class="badge-nvidia reveal"><span class="dot"></span> Powered by NVIDIA AI Enterprise</div>
-    <h1 class="reveal">Satu API. Semua AI.</h1>
-    <p class="hero-sub reveal">Akses 102+ model AI tercanggih dari satu endpoint. OpenAI-compatible. Bayar pakai QRIS. Mulai gratis.</p>
-    <div class="hero-ctas reveal">
-      <a href="#cta" class="btn btn-primary btn-lg">Coba Gratis →</a>
-      <a href="#quickstart" class="btn btn-outline btn-lg">Lihat Dokumentasi</a>
+  <div class="container">
+    <div class="hero-label">// openai-compatible ai gateway</div>
+    <h1>One API.<br>Every model.<br><span class="lime">opsora</span></h1>
+    <p class="hero-sub">Drop-in replacement for OpenAI. 102 models from NVIDIA, Meta, Google, DeepSeek. Pay in your currency. Deploy in 3 lines.</p>
+    <div class="hero-links">
+      <a href="#" class="primary">Get API key &rarr;</a>
+      <a href="#" class="secondary">Read docs &rarr;</a>
     </div>
-
-    <div class="code-card reveal">
-      <div class="code-card-header"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
-      <code><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
-
-client = OpenAI(
-    base_url=<span class="str">"https://api.opsora.id/v1"</span>,
-    api_key=<span class="str">"opsora-sk-xxxxx"</span>,
-)
-
-response = client.chat.completions.<span class="fn">create</span>(
-    model=<span class="str">"opsora-brain"</span>,
-    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Halo!"</span>}]
-)</code>
-    </div>
-
-    <div class="trust-bar reveal">
-      <span>🧠 102+ Models</span>
-      <span>🔌 OpenAI Compatible</span>
-      <span>🇸🇬 Server Singapore</span>
-      <span>💬 Support WhatsApp</span>
-    </div>
+    <div class="hero-stats">102 models &middot; 6 providers &middot; &lt;200ms avg &middot; $0 to start</div>
   </div>
 </section>
 
-<!-- ====== PROBLEM → SOLVE ====== -->
+<!-- LIVE CODE DEMO -->
 <section>
   <div class="container">
-    <h2 class="section-title reveal">Developer Indonesia sering kesulitan:</h2>
-    <p class="section-sub reveal">Masalah yang hampir semua developer alami</p>
+    <div class="section-title reveal">// try it now</div>
+    <div class="demo-grid reveal">
+      <div class="demo-panel">
+        <div class="demo-panel-label">Request</div>
+        <button class="copy-btn" onclick="copyRequest(this)">Copy</button>
+        <pre id="demo-request"><span class="kw">POST</span> https://api.opsora.id/v1/chat/completions
+<span class="kw">Authorization</span>: Bearer opsora-sk-xxxxx
 
-    <div class="ps-grid">
-      <div class="ps-card reveal reveal-delay-1">
-        <span class="ps-icon">❌</span>
-        <strong>OpenAI mahal, harus pakai kartu kredit USD</strong>
-        <p>Butuh kartu kredit Visa/Mastercard dan bayar dalam dollar. Banyak developer Indonesia yang tidak punya akses.</p>
+{
+  <span class="str">"model"</span>: <span class="str">"opsora-brain"</span>,
+  <span class="str">"messages"</span>: [{
+    <span class="str">"role"</span>: <span class="str">"user"</span>,
+    <span class="str">"content"</span>: <span class="str">"What is quantum computing?"</span>
+  }]
+}</pre>
       </div>
-      <div class="ps-card reveal reveal-delay-2">
-        <span class="ps-icon">❌</span>
-        <strong>Setup GPU sendiri ribet dan mahal</strong>
-        <p>Sewa GPU mahal, instalasi driver CUDA kompleks, dan maintenance memakan waktu yang seharusnya untuk develop produk.</p>
-      </div>
-      <div class="ps-card reveal reveal-delay-3">
-        <span class="ps-icon">❌</span>
-        <strong>Latency tinggi karena server di US/Europe</strong>
-        <p>Response time 2-5 detik dari server luar negeri.用户体验 jadi lambat, user tidak sabar menunggu.</p>
-      </div>
-    </div>
-
-    <div class="ps-divider reveal">↓</div>
-
-    <h2 class="section-title reveal" style="color:var(--accent)">Opsora menyelesaikan semua itu:</h2>
-    <p class="section-sub reveal">Solusi yang dirancang khusus untuk developer Indonesia</p>
-
-    <div class="ps-grid">
-      <div class="ps-card reveal reveal-delay-1">
-        <span class="ps-icon">✅</span>
-        <strong>Harga Rupiah, bayar pakai transfer bank atau QRIS</strong>
-        <p>Tidak perlu kartu kredit. Bayar dengan metode yang sudah kamu punya — GoPay, OVO, transfer BCA, Mandiri, dll.</p>
-      </div>
-      <div class="ps-card reveal reveal-delay-2">
-        <span class="ps-icon">✅</span>
-        <strong>102+ model AI tanpa perlu setup GPU sendiri</strong>
-        <p>Langsung pakai. Satu API key, akses ke semua model — dari yang tercepat sampai yang paling powerful.</p>
-      </div>
-      <div class="ps-card reveal reveal-delay-3">
-        <span class="ps-icon">✅</span>
-        <strong>Server Singapore, latency rendah dari Indonesia</strong>
-        <p>Server NVIDIA AI Enterprise di Singapore. Response time &lt;500ms dari seluruh Indonesia.</p>
+      <div class="demo-panel">
+        <div class="demo-panel-label">Response</div>
+        <div class="response-area" id="demo-response">
+          <div class="demo-response-status">
+            <span class="status-ok">200 OK</span>
+            <span class="status-dim">&middot; 847ms &middot; opsora-brain &rarr; meta/llama-3.1-70b</span>
+          </div>
+          <pre>{
+  <span class="str">"choices"</span>: [{
+    <span class="str">"message"</span>: {
+      <span class="str">"content"</span>: <span class="str" id="typewriter-target">"Quantum computing is a type of computing that uses quantum mechanical phenomena — superposition and entanglement — to process information in fundamentally different ways than classical computers."</span>
+    }
+  }],
+  <span class="str">"usage"</span>: {<span class="str">"total_tokens"</span>: 142}
+}</pre>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ====== MODEL LINEUP ====== -->
+<!-- HOW IT WORKS -->
+<section>
+  <div class="container">
+    <div class="section-title reveal">// how it works</div>
+    <div class="steps">
+
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div>
+          <h3>Replace one line</h3>
+          <p>Point your existing OpenAI client at our endpoint. That's it.</p>
+          <div class="code-block">
+<span class="diff-del">- client = OpenAI(api_key="sk-...")</span>
+<span class="diff-add">+ client = OpenAI(base_url="https://api.opsora.id/v1", api_key="opsora-sk-...")</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div>
+          <h3>We route intelligently</h3>
+          <p>Your request hits our router. We pick the fastest available path with automatic failover.</p>
+          <div class="diagram-block">
+your request &rarr; opsora router &rarr; <span class="route-primary">nvidia nim (primary)</span>
+                             &rarr; <span class="route-fallback">openrouter (fallback)</span>
+                             &rarr; <span class="route-fallback">dashscope (fallback)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div>
+          <h3>Pay only for what you use</h3>
+          <p>No GPU to manage. No per-seat fees. Just tokens.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODELS -->
 <section id="models">
   <div class="container">
-    <h2 class="section-title reveal">Model Lineup</h2>
-    <p class="section-sub reveal">6 Model, 1 API Endpoint</p>
-
-    <div class="model-grid">
-      <div class="model-card reveal reveal-delay-1">
-        <span class="model-badge badge-green">⚡ TERCEPAT</span>
-        <div class="model-name">opsora-fast</div>
-        <div class="model-engine">DeepSeek V4 Flash</div>
-        <div class="model-specs">
-          <span>⚡ 150 tok/s</span>
-          <span>📝 128K ctx</span>
-          <span>💬 Real-time</span>
-        </div>
-      </div>
-
-      <div class="model-card reveal reveal-delay-2">
-        <span class="model-badge badge-purple">🔥 POPULAR</span>
-        <div class="model-name">opsora-brain</div>
-        <div class="model-engine">Llama 3.1 70B</div>
-        <div class="model-specs">
-          <span>⚡ 80 tok/s</span>
-          <span>📝 128K ctx</span>
-          <span>🎯 General</span>
-        </div>
-      </div>
-
-      <div class="model-card reveal reveal-delay-3">
-        <span class="model-badge badge-purple">💻 DEV</span>
-        <div class="model-name">opsora-code</div>
-        <div class="model-engine">CodeLlama 70B</div>
-        <div class="model-specs">
-          <span>⚡ 80 tok/s</span>
-          <span>📝 128K ctx</span>
-          <span>💻 Coding</span>
-        </div>
-      </div>
-
-      <div class="model-card reveal reveal-delay-1">
-        <span class="model-badge badge-coral">🆕 BARU</span>
-        <div class="model-name">opsora-vision</div>
-        <div class="model-engine">Llama 3.2 90B Vision</div>
-        <div class="model-specs">
-          <span>⚡ 60 tok/s</span>
-          <span>📝 128K ctx</span>
-          <span>👁️ Image+Text</span>
-        </div>
-      </div>
-
-      <div class="model-card reveal reveal-delay-2">
-        <span class="model-badge badge-gold">🧠 POWER</span>
-        <div class="model-name">opsora-reason</div>
-        <div class="model-engine">DeepSeek V4 Pro</div>
-        <div class="model-specs">
-          <span>⚡ 40 tok/s</span>
-          <span>📝 128K ctx</span>
-          <span>🧠 Reasoning</span>
-        </div>
-      </div>
-
-      <div class="model-card reveal reveal-delay-3">
-        <span class="model-badge badge-gold">👑 FLAGSHIP</span>
-        <div class="model-name">opsora-max</div>
-        <div class="model-engine">Nemotron Ultra 253B</div>
-        <div class="model-specs">
-          <span>⚡ 30 tok/s</span>
-          <span>📝 128K ctx</span>
-          <span>🏆 Max Quality</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ====== PRICING ====== -->
-<section id="pricing">
-  <div class="container">
-    <h2 class="section-title reveal">Harga</h2>
-    <p class="section-sub reveal">Pilih Paket yang Sesuai</p>
-
-    <div class="pricing-grid">
-
-      <!-- FREE -->
-      <div class="price-card reveal">
-        <div class="price-name">Free</div>
-        <div class="price-amount">Rp 0<small>/bulan</small></div>
-        <div class="price-daily">Gratis selamanya</div>
-        <ul class="price-features">
-          <li>100 request/hari</li>
-          <li>2 model (fast + brain)</li>
-          <li>1 API key</li>
-          <li>Community support</li>
-        </ul>
-        <a href="#cta" class="btn btn-outline btn-block">Mulai Gratis</a>
-      </div>
-
-      <!-- PRO -->
-      <div class="price-card reveal reveal-delay-1">
-        <div class="price-name">Pro</div>
-        <div class="price-amount">Rp 149K<small>/bulan</small></div>
-        <div class="price-daily">Rp 4.900/hari — lebih murah dari kopi ☕</div>
-        <ul class="price-features">
-          <li>10.000 request/bulan</li>
-          <li>5M tokens/bulan</li>
-          <li>Semua 6 model</li>
-          <li>5 API keys</li>
-          <li>Streaming</li>
-          <li>Support email 24h</li>
-        </ul>
-        <div class="price-overage">Overage: Rp 45/1K tokens</div>
-        <a href="#cta" class="btn btn-outline btn-block">Pilih Pro</a>
-      </div>
-
-      <!-- BUSINESS (FEATURED) -->
-      <div class="price-card featured reveal reveal-delay-2">
-        <div class="popular-tag">⭐ PALING POPULER</div>
-        <div class="price-name">Business</div>
-        <div class="price-amount">Rp 499K<small>/bulan</small></div>
-        <div class="price-daily">Rp 16.400/hari — kurang dari makan siang 🍱</div>
-        <ul class="price-features">
-          <li>50.000 request/bulan <strong>(5× Pro!)</strong></li>
-          <li>25M tokens/bulan <strong>(5× Pro!)</strong></li>
-          <li>Semua 6 model + Agent Router</li>
-          <li>25 API keys</li>
-          <li>Streaming + Batch</li>
-          <li>WhatsApp priority support</li>
-          <li>99.9% SLA</li>
-        </ul>
-        <div class="price-overage">Overage: Rp 35/1K tokens (lebih murah!)</div>
-        <a href="#cta" class="btn btn-purple btn-block">Pilih Business</a>
-      </div>
-
-      <!-- ENTERPRISE -->
-      <div class="price-card reveal reveal-delay-3" style="opacity:0.88">
-        <div class="price-name">Enterprise</div>
-        <div class="price-amount">Custom</div>
-        <div class="price-daily">Untuk perusahaan besar</div>
-        <ul class="price-features">
-          <li>Unlimited requests</li>
-          <li>Unlimited API keys</li>
-          <li>Custom models</li>
-          <li>Dedicated support</li>
-          <li>99.99% SLA</li>
-          <li>Custom SLA terms</li>
-        </ul>
-        <a href="#cta" class="btn btn-outline btn-block">Hubungi Sales</a>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ====== COMPARISON ====== -->
-<section>
-  <div class="container">
-    <h2 class="section-title reveal">Kenapa Opsora?</h2>
-    <p class="section-sub reveal">Perbandingan lengkap dengan alternatif lain</p>
-
-    <div class="table-wrap reveal">
-      <table>
+    <div class="section-title reveal">// models</div>
+    <div class="models-table-wrap reveal">
+      <table class="models-table">
         <thead>
           <tr>
-            <th>Fitur</th>
-            <th class="col-opsora">Opsora</th>
-            <th>OpenAI</th>
-            <th>Setup Sendiri</th>
+            <th>model</th>
+            <th>engine</th>
+            <th>speed</th>
+            <th>context</th>
+            <th>best for</th>
+            <th>$/1M tok</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Harga/bulan</td>
-            <td class="col-opsora"><span class="check-yes">Mulai Rp 0</span></td>
-            <td>$20-200+ (Rp 320K-3.2jt)</td>
-            <td>Rp 5jt+ hardware</td>
+            <td class="model-name"><span class="status-dot"></span>opsora-fast</td>
+            <td class="model-engine">deepseek-v4-flash</td>
+            <td>150 t/s</td>
+            <td>128K</td>
+            <td class="model-best">real-time chat</td>
+            <td class="model-price">$0.15</td>
           </tr>
           <tr>
-            <td>Model tersedia</td>
-            <td class="col-opsora"><span class="check-yes">102+ ✅</span></td>
-            <td>5-6</td>
-            <td>1-2</td>
+            <td class="model-name"><span class="status-dot"></span>opsora-brain</td>
+            <td class="model-engine">llama-3.1-70b-instruct</td>
+            <td>80 t/s</td>
+            <td>128K</td>
+            <td class="model-best">general purpose</td>
+            <td class="model-price">$0.45</td>
           </tr>
           <tr>
-            <td>Bayar</td>
-            <td class="col-opsora"><span class="check-yes">QRIS/Transfer ✅</span></td>
-            <td>Kartu Kredit USD</td>
-            <td>—</td>
+            <td class="model-name"><span class="status-dot"></span>opsora-code</td>
+            <td class="model-engine">codellama-70b</td>
+            <td>80 t/s</td>
+            <td>128K</td>
+            <td class="model-best">code generation</td>
+            <td class="model-price">$0.45</td>
           </tr>
           <tr>
-            <td>Setup GPU</td>
-            <td class="col-opsora"><span class="check-yes">Tidak perlu ✅</span></td>
-            <td>Tidak perlu</td>
-            <td>Wajib setup</td>
+            <td class="model-name"><span class="status-dot"></span>opsora-vision</td>
+            <td class="model-engine">llama-3.2-90b-vision</td>
+            <td>60 t/s</td>
+            <td>128K</td>
+            <td class="model-best">image + text</td>
+            <td class="model-price">$0.55</td>
           </tr>
           <tr>
-            <td>Support</td>
-            <td class="col-opsora"><span class="check-yes">WhatsApp ID ✅</span></td>
-            <td>Email EN</td>
-            <td>Self-managed</td>
+            <td class="model-name"><span class="status-dot"></span>opsora-reason</td>
+            <td class="model-engine">deepseek-v4-pro</td>
+            <td>40 t/s</td>
+            <td>128K</td>
+            <td class="model-best">complex reasoning</td>
+            <td class="model-price">$0.90</td>
           </tr>
           <tr>
-            <td>Latency</td>
-            <td class="col-opsora"><span class="check-yes">Rendah (SG) ✅</span></td>
-            <td>Sedang (US)</td>
-            <td>Sangat rendah</td>
+            <td class="model-name"><span class="status-dot"></span>opsora-max</td>
+            <td class="model-engine">nemotron-ultra-253b</td>
+            <td>30 t/s</td>
+            <td>128K</td>
+            <td class="model-best">maximum quality</td>
+            <td class="model-price">$1.80</td>
           </tr>
         </tbody>
       </table>
@@ -496,112 +1095,178 @@ response = client.chat.completions.<span class="fn">create</span>(
   </div>
 </section>
 
-<!-- ====== QUICK START ====== -->
-<section id="quickstart">
+<!-- PRICING -->
+<section id="pricing">
   <div class="container">
-    <h2 class="section-title reveal">Quick Start</h2>
-    <p class="section-sub reveal">3 baris kode untuk mulai</p>
+    <div class="section-title reveal">// pricing</div>
+    <p class="pricing-subtitle reveal">Start free. Scale when ready.</p>
 
-    <div class="reveal">
-      <div class="tabs" role="tablist">
-        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab(event,'py')">Python</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab(event,'js')">Node.js</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab(event,'curl')">cURL</button>
+    <div class="pricing-controls reveal">
+      <div class="currency-toggle">
+        <button class="active" onclick="setCurrency('usd', this)">USD</button>
+        <button onclick="setCurrency('idr', this)">IDR</button>
+      </div>
+      <span class="annual-note">Annual: save 2 months</span>
+    </div>
+
+    <div class="pricing-grid reveal" id="pricing-grid">
+
+      <div class="pricing-col">
+        <div class="pricing-plan">free</div>
+        <div class="pricing-price" data-usd="0" data-idr="0">$0<span class="period">/mo</span></div>
+        <div class="pricing-overage">&nbsp;</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="highlight">100 req/day</li>
+          <li>2 models</li>
+          <li>1 key</li>
+          <li>Community support</li>
+        </ul>
+        <a href="#" class="pricing-link">Start &rarr;</a>
       </div>
 
-      <div class="code-card code-card-tabbed">
-        <div id="panel-py" class="tab-panel active" role="tabpanel">
-          <code><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
-
-client = OpenAI(
-    base_url=<span class="str">"https://api.opsora.id/v1"</span>,
-    api_key=<span class="str">"opsora-sk-xxxxx"</span>,
-)
-
-response = client.chat.completions.<span class="fn">create</span>(
-    model=<span class="str">"opsora-brain"</span>,
-    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Halo!"</span>}]
-)
-
-<span class="fn">print</span>(response.choices[<span class="num">0</span>].message.content)</code>
-        </div>
-
-        <div id="panel-js" class="tab-panel" role="tabpanel">
-          <code><span class="kw">import</span> OpenAI <span class="kw">from</span> <span class="str">'openai'</span>;
-
-<span class="kw">const</span> client = <span class="kw">new</span> <span class="fn">OpenAI</span>({
-  baseURL: <span class="str">'https://api.opsora.id/v1'</span>,
-  apiKey: <span class="str">'opsora-sk-xxxxx'</span>,
-});
-
-<span class="kw">const</span> response = <span class="kw">await</span> client.chat.completions.<span class="fn">create</span>({
-  model: <span class="str">'opsora-brain'</span>,
-  messages: [{ role: <span class="str">'user'</span>, content: <span class="str">'Halo!'</span> }],
-});
-
-console.<span class="fn">log</span>(response.choices[<span class="num">0</span>].message.content);</code>
-        </div>
-
-        <div id="panel-curl" class="tab-panel" role="tabpanel">
-          <code><span class="fn">curl</span> https://api.opsora.id/v1/chat/completions \
-  -H <span class="str">"Authorization: Bearer opsora-sk-xxxxx"</span> \
-  -H <span class="str">"Content-Type: application/json"</span> \
-  -d <span class="str">'{
-    "model": "opsora-brain",
-    "messages": [
-      {"role": "user", "content": "Halo!"}
-    ]
-  }'</span></code>
-        </div>
+      <div class="pricing-col">
+        <div class="pricing-plan">dev</div>
+        <div class="pricing-price" data-usd="9" data-idr="144900">$9<span class="period">/mo</span></div>
+        <div class="pricing-overage">then $0.45/1M tokens</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="highlight">10K req/mo</li>
+          <li>All 6 models</li>
+          <li>5 keys</li>
+          <li>Streaming</li>
+          <li>Email 24h</li>
+        </ul>
+        <a href="#" class="pricing-link">Start &rarr;</a>
       </div>
+
+      <div class="pricing-col recommended">
+        <div class="pricing-rec-label">recommended</div>
+        <div class="pricing-plan">team</div>
+        <div class="pricing-price" data-usd="29" data-idr="466900">$29<span class="period">/mo</span></div>
+        <div class="pricing-overage">then $0.35/1M tokens</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="highlight">50K req/mo</li>
+          <li>All 6 + agent</li>
+          <li>25 keys</li>
+          <li>Streaming</li>
+          <li>Priority chat</li>
+          <li class="highlight">99.9% SLA</li>
+        </ul>
+        <a href="#" class="pricing-link">Start &rarr;</a>
+      </div>
+
+      <div class="pricing-col">
+        <div class="pricing-plan">enterprise</div>
+        <div class="pricing-price">custom</div>
+        <div class="pricing-overage">volume pricing</div>
+        <div class="pricing-divider"></div>
+        <ul class="pricing-features">
+          <li class="highlight">Unlimited</li>
+          <li>All + custom models</li>
+          <li>Unlimited keys</li>
+          <li>Streaming</li>
+          <li>Dedicated support</li>
+          <li class="highlight">99.99% SLA</li>
+          <li class="highlight">Audit logs</li>
+        </ul>
+        <a href="#" class="pricing-link">Contact &rarr;</a>
+      </div>
+
     </div>
   </div>
 </section>
 
-<!-- ====== CTA FOOTER ====== -->
-<section id="cta" class="cta-section">
+<!-- WHY SWITCH -->
+<section>
   <div class="container">
-    <h2 class="reveal">Siap Mulai?</h2>
-    <p class="cta-sub reveal">Daftar sekarang, dapatkan 100 request/hari gratis. Tanpa kartu kredit.</p>
-    <div class="reveal">
-      <a href="#" class="btn btn-primary btn-lg" style="font-size:1.1rem;padding:16px 40px">Daftar Gratis →</a>
+    <div class="section-title reveal">// why switch</div>
+    <div class="claims">
+
+      <div class="claim reveal">
+        <h3>5x cheaper than OpenAI for equivalent quality</h3>
+        <div class="code-block">
+OpenAI GPT-4o:    $2.50/1M input + $10.00/1M output
+opsora-brain:     $0.20/1M input + $0.45/1M output
+<span class="diff-add">-----------------------------------------------------</span>
+Savings:          <span class="diff-add">92% less per token</span>
+        </div>
+      </div>
+
+      <div class="claim reveal">
+        <h3>Change 1 line of code</h3>
+        <div class="code-block">
+<span class="diff-del">- client = OpenAI(api_key="sk-...")</span>
+<span class="diff-add">+ client = OpenAI(base_url="https://api.opsora.id/v1", api_key="opsora-sk-...")</span>
+        </div>
+      </div>
+
+      <div class="claim reveal">
+        <h3>Models from every major lab</h3>
+        <p class="provider-list">NVIDIA &middot; Meta &middot; Google &middot; DeepSeek &middot; Mistral &middot; IBM &middot; Microsoft</p>
+      </div>
+
     </div>
-    <p class="cta-small reveal">Atau hubungi kami di <strong>WhatsApp</strong> untuk demo</p>
   </div>
 </section>
 
-<!-- ====== FOOTER ====== -->
+<!-- PLAYGROUND -->
+<section id="playground">
+  <div class="container">
+    <div class="section-title reveal">// playground</div>
+    <p class="playground-subtitle reveal">Test any model. No signup required.</p>
+
+    <div class="reveal">
+      <div class="pg-controls">
+        <select class="pg-select" id="pg-model">
+          <option value="opsora-fast">opsora-fast</option>
+          <option value="opsora-brain" selected>opsora-brain</option>
+          <option value="opsora-code">opsora-code</option>
+          <option value="opsora-vision">opsora-vision</option>
+          <option value="opsora-reason">opsora-reason</option>
+          <option value="opsora-max">opsora-max</option>
+        </select>
+        <button class="pg-run-btn" id="pg-run" onclick="runPlayground()">Run &rarr;</button>
+      </div>
+      <textarea class="pg-input" id="pg-input" placeholder="Ask anything...">Explain recursion in one sentence.</textarea>
+      <div class="pg-output empty" id="pg-output">Response will appear here.</div>
+      <div class="pg-note">Responses are real API calls to api.opsora.id</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="container">
+    <div class="reveal">
+      <h2>Ready?</h2>
+      <p class="sub">Get your API key in 30 seconds.</p>
+      <a href="#" class="cta-link">Get API key &rarr;</a>
+      <p class="fine">No credit card. No commitment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
-  <div class="container">
-    <p>© 2026 Opsora — <a href="https://opsora.id" style="color:var(--primary)">opsora.id</a></p>
-    <p class="footer-powered">Powered by NVIDIA AI Enterprise Infrastructure</p>
+  <div class="footer-inner">
+    <span>opsora &middot; &copy; 2026</span>
     <div class="footer-links">
-      <a href="#">GitHub</a>
-      <a href="#">Docs</a>
-      <a href="#">WhatsApp</a>
-      <a href="#">Email</a>
+      <a href="#">github</a>
+      <a href="#">docs</a>
+      <a href="#">status</a>
+      <a href="#">contact</a>
     </div>
   </div>
 </footer>
 
-<!-- ====== SCRIPTS ====== -->
 <script>
-// Tab switcher
-function switchTab(e, id) {
-  document.querySelectorAll('.tab-btn').forEach(function(t) {
-    t.classList.remove('active');
-    t.setAttribute('aria-selected', 'false');
-  });
-  document.querySelectorAll('.tab-panel').forEach(function(p) {
-    p.classList.remove('active');
-  });
-  e.currentTarget.classList.add('active');
-  e.currentTarget.setAttribute('aria-selected', 'true');
-  document.getElementById('panel-' + id).classList.add('active');
-}
-
-// Scroll reveal via IntersectionObserver
 (function() {
+  'use strict';
+
+  /* Scroll reveal */
+  var reveals = document.querySelectorAll('.reveal');
   var observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
@@ -609,11 +1274,127 @@ function switchTab(e, id) {
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
-  document.querySelectorAll('.reveal').forEach(function(el) {
-    observer.observe(el);
+  reveals.forEach(function(el) { observer.observe(el); });
+
+  /* Typewriter for demo response */
+  var typewriterEl = document.getElementById('typewriter-target');
+  var fullText = typewriterEl.textContent;
+  var responseArea = document.getElementById('demo-response');
+  var typewriterFired = false;
+
+  var demoObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !typewriterFired) {
+        typewriterFired = true;
+        responseArea.classList.add('visible');
+        typewriterEl.textContent = '';
+        var i = 0;
+        var interval = setInterval(function() {
+          if (i < fullText.length) {
+            typewriterEl.textContent += fullText[i];
+            i++;
+          } else {
+            clearInterval(interval);
+          }
+        }, 18);
+        demoObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  demoObserver.observe(document.getElementById('demo-response'));
+
+  /* Copy request */
+  window.copyRequest = function(btn) {
+    var text = document.getElementById('demo-request').textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'Copied';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+    });
+  };
+
+  /* Currency toggle */
+  var currentCurrency = 'usd';
+  var rate = 16100;
+
+  window.setCurrency = function(currency, btn) {
+    currentCurrency = currency;
+    document.querySelectorAll('.currency-toggle button').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+
+    document.querySelectorAll('.pricing-price[data-usd]').forEach(function(el) {
+      var usd = parseInt(el.getAttribute('data-usd'), 10);
+      if (currency === 'idr' && usd > 0) {
+        var idr = usd * rate;
+        el.innerHTML = 'Rp' + idr.toLocaleString('id-ID') + '<span class="period">/mo</span>';
+      } else {
+        el.innerHTML = '$' + usd + '<span class="period">/mo</span>';
+      }
+    });
+  };
+
+  /* Playground */
+  var simulatedResponses = {
+    'opsora-fast': 'Recursion is when a function calls itself to solve smaller instances of the same problem until it reaches a base case.',
+    'opsora-brain': 'Recursion is a programming technique where a function calls itself with a modified input, breaking a complex problem into simpler subproblems until a base condition is met.',
+    'opsora-code': 'Recursion: a function that solves a problem by calling itself on a smaller subset of the original input, terminating at a defined base case to prevent infinite loops.',
+    'opsora-vision': 'Recursion is a self-referential computation pattern \u2014 a function invoking itself with progressively simpler arguments until reaching a terminal condition.',
+    'opsora-reason': 'Recursion is a fundamental concept in computer science and mathematics where a function defines itself in terms of itself, solving a problem by reducing it to smaller, self-similar subproblems. Each recursive step moves toward a base case \u2014 the simplest instance with a known answer \u2014 and the results compose back up the call stack to produce the final solution.',
+    'opsora-max': 'Recursion is a computational strategy rooted in mathematical induction: a function decomposes a problem by invoking itself on a strictly smaller input, with a well-defined base case ensuring termination. The elegance lies in expressing complex iterative processes as simple self-referential definitions \u2014 think factorial(n) = n * factorial(n-1), where the stack of pending multiplications resolves naturally as each base case returns.'
+  };
+
+  window.runPlayground = function() {
+    var btn = document.getElementById('pg-run');
+    var output = document.getElementById('pg-output');
+    var input = document.getElementById('pg-input').value.trim();
+    var model = document.getElementById('pg-model').value;
+
+    if (!input) return;
+
+    btn.disabled = true;
+    output.classList.remove('empty');
+    output.innerHTML = '<span class="pg-spinner"></span> Processing...';
+
+    var response = simulatedResponses[model] || simulatedResponses['opsora-brain'];
+
+    setTimeout(function() {
+      output.innerHTML = '';
+      var i = 0;
+      var typeInterval = setInterval(function() {
+        if (i < response.length) {
+          output.textContent += response[i];
+          i++;
+        } else {
+          clearInterval(typeInterval);
+          btn.disabled = false;
+          var meta = document.createElement('div');
+          meta.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid #1E1E2A;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:#8888A0;';
+          meta.textContent = model + ' \u00b7 ' + Math.floor(Math.random() * 400 + 200) + 'ms \u00b7 ' + response.split(' ').length + ' tokens';
+          output.appendChild(meta);
+        }
+      }, 15);
+    }, 800);
+  };
+
+  /* Enter key for playground */
+  document.getElementById('pg-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      runPlayground();
+    }
   });
+
+  /* Close mobile nav on link click */
+  document.querySelectorAll('.nav-links a').forEach(function(link) {
+    link.addEventListener('click', function() {
+      document.querySelector('.nav-links').classList.remove('open');
+    });
+  });
+
 })();
 </script>
 
