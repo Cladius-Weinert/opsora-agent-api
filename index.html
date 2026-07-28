@@ -1,644 +1,621 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opsora Agent API — Satu API. Semua AI.</title>
+<meta name="description" content="Akses 102+ model AI tercanggih dari satu endpoint. OpenAI-compatible. Bayar pakai QRIS. Mulai gratis.">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0a0a0f;
-    color: #e0e0e0;
-    overflow-x: hidden;
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A0F;--bg2:#111118;--card:#12121A;
+  --primary:#763AFF;--primary-light:#9B6AFF;--accent:#00C896;--gold:#FFAA00;--coral:#FF6B6B;
+  --text:#E8E8F0;--muted:#8888A0;--border:rgba(255,255,255,0.06);
+  --radius:16px;--radius-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono",SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+ul{list-style:none}
+table{border-collapse:collapse;width:100%}
 
-  /* === HERO === */
-  .hero {
-    position: relative;
-    padding: 80px 20px 60px;
-    text-align: center;
-    background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%);
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 30% 50%, rgba(118, 58, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 70% 50%, rgba(0, 200, 150, 0.06) 0%, transparent 50%);
-    animation: pulse 8s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 0.5; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.05); }
-  }
-  .hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
-  
-  .logo {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 30px;
-  }
-  .logo-icon {
-    width: 48px; height: 48px;
-    background: linear-gradient(135deg, #763aff, #00c896);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 800; color: white;
-  }
-  .logo-text { font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.5px; }
-  
-  .hero h1 {
-    font-size: clamp(32px, 6vw, 56px);
-    font-weight: 800;
-    line-height: 1.1;
-    background: linear-gradient(135deg, #fff 0%, #c4b5fd 50%, #00c896 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 16px;
-  }
-  .hero p {
-    font-size: 18px;
-    color: #9ca3af;
-    max-width: 560px;
-    margin: 0 auto 30px;
-    line-height: 1.6;
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: rgba(118, 58, 255, 0.15);
-    border: 1px solid rgba(118, 58, 255, 0.3);
-    border-radius: 100px;
-    font-size: 13px;
-    color: #c4b5fd;
-    font-weight: 500;
-  }
-  .badge .dot {
-    width: 8px; height: 8px;
-    background: #00c896;
-    border-radius: 50%;
-    animation: blink 2s infinite;
-  }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+/* === LAYOUT === */
+.container{max-width:1120px;margin:0 auto;padding:0 24px}
+section{padding:80px 0}
 
-  /* === MODELS === */
-  .models-section {
-    padding: 60px 20px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-  .section-title {
-    text-align: center;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: #763aff;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
-  .section-heading {
-    text-align: center;
-    font-size: 28px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 40px;
-  }
-  .model-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-  }
-  .model-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
-    padding: 24px;
-    transition: all 0.3s;
-  }
-  .model-card:hover {
-    border-color: rgba(118, 58, 255, 0.3);
-    background: rgba(118, 58, 255, 0.05);
-    transform: translateY(-2px);
-  }
-  .model-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .model-name .tag {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 100px;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  .tag-fast { background: rgba(0,200,150,0.15); color: #00c896; }
-  .tag-pro { background: rgba(118,58,255,0.15); color: #c4b5fd; }
-  .tag-max { background: rgba(255,170,0,0.15); color: #ffaa00; }
-  .tag-new { background: rgba(255,70,70,0.15); color: #ff6b6b; }
-  .model-engine {
-    font-size: 12px;
-    color: #6b7280;
-    margin-bottom: 8px;
-  }
-  .model-desc {
-    font-size: 13px;
-    color: #9ca3af;
-    line-height: 1.5;
-  }
-  .model-specs {
-    display: flex;
-    gap: 16px;
-    margin-top: 12px;
-    font-size: 11px;
-    color: #6b7280;
-  }
-  .model-specs span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+/* === TYPOGRAPHY === */
+.section-title{text-align:center;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:12px;letter-spacing:-0.02em}
+.section-sub{text-align:center;color:var(--muted);font-size:1.05rem;margin-bottom:48px;max-width:560px;margin-left:auto;margin-right:auto}
 
-  /* === PRICING === */
-  .pricing-section {
-    padding: 60px 20px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    align-items: start;
-  }
-  .price-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 32px 28px;
-    position: relative;
-    transition: all 0.3s;
-  }
-  .price-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  }
-  .price-card.popular {
-    border-color: rgba(118, 58, 255, 0.4);
-    background: linear-gradient(135deg, rgba(118,58,255,0.08), rgba(0,200,150,0.04));
-  }
-  .popular-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #763aff, #00c896);
-    color: white;
-    padding: 4px 20px;
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .plan-name {
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 4px;
-  }
-  .plan-desc {
-    font-size: 13px;
-    color: #6b7280;
-    margin-bottom: 20px;
-  }
-  .price {
-    margin-bottom: 24px;
-  }
-  .price .amount {
-    font-size: 42px;
-    font-weight: 800;
-    color: white;
-    line-height: 1;
-  }
-  .price .currency {
-    font-size: 18px;
-    font-weight: 600;
-    color: #9ca3af;
-    vertical-align: super;
-  }
-  .price .period {
-    font-size: 14px;
-    color: #6b7280;
-    margin-left: 4px;
-  }
-  .features {
-    list-style: none;
-    margin-bottom: 28px;
-  }
-  .features li {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 8px 0;
-    font-size: 14px;
-    color: #d1d5db;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
-  .features li:last-child { border: none; }
-  .features li .check {
-    color: #00c896;
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-  .cta-btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.3s;
-  }
-  .cta-primary {
-    background: linear-gradient(135deg, #763aff, #5b2ddb);
-    color: white;
-  }
-  .cta-primary:hover {
-    background: linear-gradient(135deg, #8b4dff, #763aff);
-    transform: scale(1.02);
-  }
-  .cta-outline {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.15);
-    color: white;
-  }
-  .cta-outline:hover {
-    border-color: rgba(118,58,255,0.5);
-    background: rgba(118,58,255,0.1);
-  }
+/* === BUTTONS === */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 24px;border-radius:999px;font-weight:600;font-size:.9rem;border:none;cursor:pointer;transition:all .25s ease;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#0A0A0F}
+.btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,200,150,0.25)}
+.btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.18);color:#fff}
+.btn-outline:hover{border-color:var(--primary);background:rgba(118,58,255,0.08)}
+.btn-purple{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff}
+.btn-purple:hover{filter:brightness(1.15);transform:translateY(-1px);box-shadow:0 8px 24px rgba(118,58,255,0.3)}
+.btn-lg{padding:14px 32px;font-size:1.05rem}
+.btn-sm{padding:8px 18px;font-size:.82rem}
+.btn-block{width:100%}
 
-  /* === COMPARISON === */
-  .compare-section {
-    padding: 60px 20px;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-  .compare-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }
-  .compare-table th {
-    text-align: left;
-    padding: 14px 16px;
-    color: #9ca3af;
-    font-weight: 500;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .compare-table td {
-    padding: 14px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    color: #d1d5db;
-  }
-  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
-  .compare-table .yes { color: #00c896; font-weight: 700; }
-  .compare-table .no { color: #4b5563; }
+/* === NAV === */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 0}
+nav .container{display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.2rem;color:#fff}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:#fff;flex-shrink:0}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a:not(.btn){font-size:.88rem;color:var(--muted);transition:color .2s}
+.nav-links a:not(.btn):hover{color:#fff}
+@media(max-width:640px){
+  .nav-links a:not(.btn){display:none}
+  .nav-links .btn{padding:8px 18px;font-size:.82rem}
+}
 
-  /* === CTA FOOTER === */
-  .cta-footer {
-    padding: 80px 20px;
-    text-align: center;
-    background: linear-gradient(135deg, rgba(118,58,255,0.08), rgba(0,200,150,0.05));
-    border-top: 1px solid rgba(255,255,255,0.05);
-  }
-  .cta-footer h2 {
-    font-size: 32px;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 12px;
-  }
-  .cta-footer p {
-    font-size: 16px;
-    color: #9ca3af;
-    margin-bottom: 30px;
-  }
-  .cta-footer .cta-btn {
-    display: inline-block;
-    width: auto;
-    padding: 16px 40px;
-    font-size: 16px;
-  }
+/* === HERO === */
+.hero{padding:80px 0 64px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(118,58,255,0.08) 0%,rgba(0,200,150,0.04) 40%,transparent 70%);pointer-events:none}
+.hero-content{position:relative;z-index:1}
+.badge-nvidia{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:999px;background:rgba(0,200,150,0.07);border:1px solid rgba(0,200,150,0.18);font-size:.82rem;color:var(--accent);margin-bottom:28px;font-weight:500}
+.badge-nvidia .dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;line-height:1.08;letter-spacing:-0.03em;background:linear-gradient(135deg,#fff 0%,#c4b5fd 40%,var(--primary) 60%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px}
+.hero-sub{font-size:clamp(1rem,2.5vw,1.2rem);color:var(--muted);max-width:600px;margin:0 auto 32px;line-height:1.65}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
 
-  /* === FOOTER === */
-  footer {
-    padding: 40px 20px;
-    text-align: center;
-    font-size: 13px;
-    color: #4b5563;
-    border-top: 1px solid rgba(255,255,255,0.04);
-  }
-  footer a { color: #763aff; text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+/* === CODE CARD === */
+.code-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;text-align:left;max-width:580px;margin:0 auto;overflow-x:auto;position:relative}
+.code-card code{font-family:var(--mono);font-size:.82rem;line-height:1.75;color:#d1d5db;display:block}
+.kw{color:#C084FC}.str{color:#34D399}.fn{color:#60A5FA}.cm{color:#6B7280;font-style:italic}.op{color:#F9A8D4}.num{color:#FCD34D}
+.code-card-header{display:flex;align-items:center;gap:6px;margin-bottom:16px}
+.code-dot{width:10px;height:10px;border-radius:50%}
+.code-dot:nth-child(1){background:#FF5F57}
+.code-dot:nth-child(2){background:#FEBC2E}
+.code-dot:nth-child(3){background:#28C840}
 
-  /* === CODE SNIPPET === */
-  .code-section {
-    padding: 60px 20px;
-    max-width: 700px;
-    margin: 0 auto;
-  }
-  .code-block {
-    background: #111118;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 24px;
-    overflow-x: auto;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    line-height: 1.7;
-    color: #d1d5db;
-  }
-  .code-block .comment { color: #6b7280; }
-  .code-block .string { color: #00c896; }
-  .code-block .keyword { color: #c4b5fd; }
-  .code-block .func { color: #60a5fa; }
+/* === TRUST BAR === */
+.trust-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:24px;margin-top:36px;padding-top:28px;border-top:1px solid var(--border)}
+.trust-bar span{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.84rem;font-weight:500}
 
-  /* === RESPONSIVE === */
-  @media (max-width: 640px) {
-    .hero { padding: 60px 16px 40px; }
-    .pricing-grid { grid-template-columns: 1fr; }
-    .model-grid { grid-template-columns: 1fr; }
-    .compare-table { font-size: 12px; }
-    .compare-table th, .compare-table td { padding: 10px 8px; }
-  }
+/* === PROBLEM / SOLVE === */
+.ps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-bottom:16px}
+.ps-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:border-color .3s}
+.ps-card:hover{border-color:rgba(255,255,255,0.12)}
+.ps-icon{font-size:1.5rem;margin-bottom:10px;display:block}
+.ps-card strong{display:block;font-size:1rem;margin-bottom:4px}
+.ps-card p{color:var(--muted);font-size:.88rem;line-height:1.5}
+.ps-divider{text-align:center;font-size:2.2rem;color:var(--primary);margin:32px 0;opacity:.6}
+
+/* === MODEL CARDS === */
+.model-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.model-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .3s}
+.model-card:hover{border-color:rgba(118,58,255,0.3);box-shadow:0 0 32px rgba(118,58,255,0.06);transform:translateY(-2px)}
+.model-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.badge-green{background:rgba(0,200,150,0.12);color:var(--accent)}
+.badge-purple{background:rgba(118,58,255,0.12);color:#A78BFA}
+.badge-coral{background:rgba(255,107,107,0.12);color:var(--coral)}
+.badge-gold{background:rgba(255,170,0,0.12);color:var(--gold)}
+.model-name{font-size:1.1rem;font-weight:700;margin-bottom:3px;color:#fff}
+.model-engine{color:var(--muted);font-size:.83rem;margin-bottom:14px}
+.model-specs{display:flex;gap:10px;flex-wrap:wrap}
+.model-specs span{background:rgba(255,255,255,0.04);padding:4px 10px;border-radius:7px;font-size:.78rem;color:var(--muted);font-weight:500}
+
+/* === PRICING === */
+.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:start}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 24px;position:relative;transition:all .3s}
+.price-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,0.25)}
+.price-card.featured{border:2px solid var(--primary);background:linear-gradient(170deg,rgba(118,58,255,0.06) 0%,var(--card) 60%);box-shadow:0 0 48px rgba(118,58,255,0.12);transform:scale(1.04)}
+.price-card.featured:hover{transform:scale(1.06)}
+.popular-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:5px 18px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.price-name{font-size:1.1rem;font-weight:700;margin-bottom:4px;color:#fff}
+.price-amount{font-size:2.2rem;font-weight:800;margin-bottom:2px;color:#fff;letter-spacing:-0.02em}
+.price-amount small{font-size:.85rem;font-weight:400;color:var(--muted)}
+.price-daily{font-size:.8rem;color:var(--muted);margin-bottom:18px;line-height:1.4}
+.price-features{margin-bottom:22px}
+.price-features li{padding:6px 0;font-size:.88rem;display:flex;align-items:flex-start;gap:8px;color:#d1d5db}
+.price-features li::before{content:"✓";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+.price-overage{font-size:.78rem;color:var(--muted);margin-bottom:18px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--border)}
+
+@media(max-width:960px){.pricing-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .pricing-grid{grid-template-columns:1fr}
+  .price-card.featured{transform:none}
+  .price-card.featured:hover{transform:translateY(-4px)}
+}
+
+/* === COMPARISON TABLE === */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:var(--card)}
+.table-wrap table{font-size:.88rem}
+.table-wrap th,.table-wrap td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--border)}
+.table-wrap th{background:rgba(255,255,255,0.02);font-weight:600;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.table-wrap td:first-child{font-weight:600;color:#fff}
+.table-wrap tr:last-child td{border-bottom:none}
+.col-opsora{background:rgba(118,58,255,0.04)}
+.check-yes{color:var(--accent);font-weight:600}
+
+/* === TABS === */
+.tabs{display:flex;gap:4px;margin-bottom:0;background:rgba(255,255,255,0.03);border-radius:10px 10px 0 0;padding:6px 6px 0;border:1px solid var(--border);border-bottom:none;max-width:640px;margin-left:auto;margin-right:auto}
+.tab-btn{padding:10px 20px;border-radius:8px 8px 0 0;font-size:.84rem;cursor:pointer;color:var(--muted);background:transparent;border:none;font-weight:500;font-family:var(--font);transition:all .2s}
+.tab-btn.active{background:var(--bg2);color:#A78BFA;font-weight:600}
+.tab-btn:hover:not(.active){color:#fff}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.code-card-tabbed{border-radius:0 0 var(--radius) var(--radius);margin:0 auto;max-width:640px;border-top:none}
+
+/* === CTA SECTION === */
+.cta-section{text-align:center;padding:88px 0;position:relative}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(118,58,255,0.06) 0%,transparent 70%);pointer-events:none}
+.cta-section h2{font-size:clamp(2rem,5vw,3rem);font-weight:800;margin-bottom:16px;letter-spacing:-0.02em;position:relative}
+.cta-section .cta-sub{color:var(--muted);margin-bottom:32px;font-size:1.05rem;position:relative}
+.cta-small{margin-top:18px;font-size:.85rem;color:var(--muted);position:relative}
+
+/* === FOOTER === */
+footer{border-top:1px solid var(--border);padding:36px 0;text-align:center;color:var(--muted);font-size:.84rem}
+footer p{margin-bottom:4px}
+.footer-links{display:flex;justify-content:center;gap:24px;margin-top:14px;flex-wrap:wrap}
+.footer-links a{color:var(--muted);transition:color .2s;font-weight:500}
+.footer-links a:hover{color:#fff}
+.footer-powered{font-size:.78rem;margin-top:10px;opacity:.7}
+
+/* === ANIMATIONS === */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .65s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+
+/* === MOBILE === */
+@media(max-width:640px){
+  section{padding:56px 0}
+  .container{padding:0 18px}
+  .hero{padding:56px 0 48px}
+  .model-grid{grid-template-columns:1fr}
+  .ps-grid{grid-template-columns:1fr}
+  .table-wrap th,.table-wrap td{padding:10px 12px;font-size:.8rem}
+  .trust-bar{gap:16px}
+  .trust-bar span{font-size:.78rem}
+}
 </style>
+</head>
+<body>
 
-<!-- HERO -->
+<!-- ====== NAV ====== -->
+<nav>
+  <div class="container">
+    <a href="#" class="logo">
+      <span class="logo-icon">O</span>
+      <span>Opsora</span>
+    </a>
+    <div class="nav-links">
+      <a href="#models">Model</a>
+      <a href="#pricing">Harga</a>
+      <a href="#quickstart">Playground</a>
+      <a href="#quickstart">Docs</a>
+      <a href="#cta" class="btn btn-primary btn-sm">Mulai Gratis</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ====== HERO ====== -->
 <section class="hero">
-  <div class="hero-content">
-    <div class="logo">
-      <div class="logo-icon">O</div>
-      <div class="logo-text">Opsora Agent</div>
-    </div>
-    <div class="badge"><span class="dot"></span> Powered by NVIDIA AI Enterprise</div>
-    <h1>AI API Terbaik untuk Developer Indonesia</h1>
-    <p>Akses model AI tercanggih melalui satu API yang simpel. OpenAI-compatible. Tanpa setup GPU. Harga terjangkau.</p>
-  </div>
-</section>
-
-<!-- MODELS -->
-<section class="models-section">
-  <div class="section-title">Model Lineup</div>
-  <div class="section-heading">6 Model, 1 API Endpoint</div>
-  <div class="model-grid">
-    <div class="model-card">
-      <div class="model-name">opsora-brain <span class="tag tag-pro">POPULAR</span></div>
-      <div class="model-engine">Llama 3.1 70B Instruct</div>
-      <div class="model-desc">Model serbaguna untuk chat, analisis, dan tugas umum. Keseimbangan sempurna antara kualitas dan kecepatan.</div>
-      <div class="model-specs">
-        <span>⚡ ~80 tok/s</span>
-        <span>📝 128K context</span>
-        <span>🎯 General</span>
-      </div>
-    </div>
-    <div class="model-card">
-      <div class="model-name">opsora-fast <span class="tag tag-fast">TERCEPAT</span></div>
-      <div class="model-engine">DeepSeek V4 Flash</div>
-      <div class="model-desc">Respon ultra-cepat untuk real-time applications. Cocok untuk chatbot, auto-reply, dan high-volume API calls.</div>
-      <div class="model-specs">
-        <span>⚡ ~150 tok/s</span>
-        <span>📝 128K context</span>
-        <span>💰 Termurah</span>
-      </div>
-    </div>
-    <div class="model-card">
-      <div class="model-name">opsora-code <span class="tag tag-pro">DEV</span></div>
-      <div class="model-engine">Llama 3.1 70B Instruct</div>
-      <div class="model-desc">Dioptimasi untuk coding — code generation, debugging, code review, dan dokumentasi otomatis.</div>
-      <div class="model-specs">
-        <span>⚡ ~80 tok/s</span>
-        <span>📝 128K context</span>
-        <span>💻 Code-optimized</span>
-      </div>
-    </div>
-    <div class="model-card">
-      <div class="model-name">opsora-vision <span class="tag tag-new">BARU</span></div>
-      <div class="model-engine">Google Gemma 4 31B IT</div>
-      <div class="model-desc">Multimodal AI — memahami gambar dan teks sekaligus. OCR, image analysis, dan visual Q&A.</div>
-      <div class="model-specs">
-        <span>⚡ ~60 tok/s</span>
-        <span>📝 128K context</span>
-        <span>👁️ Vision</span>
-      </div>
-    </div>
-    <div class="model-card">
-      <div class="model-name">opsora-reason <span class="tag tag-max">POWER</span></div>
-      <div class="model-engine">DeepSeek V4 Pro</div>
-      <div class="model-desc">Advanced reasoning untuk masalah kompleks — matematika, logika, planning, dan multi-step analysis.</div>
-      <div class="model-specs">
-        <span>⚡ ~40 tok/s</span>
-        <span>📝 128K context</span>
-        <span>🧠 Reasoning</span>
-      </div>
-    </div>
-    <div class="model-card">
-      <div class="model-name">opsora-max <span class="tag tag-max">FLAGSHIP</span></div>
-      <div class="model-engine">Nemotron Ultra 253B</div>
-      <div class="model-desc">Model terkuat di lineup kami. 253 miliar parameter untuk tugas yang membutuhkan kedalaman analisis maksimal.</div>
-      <div class="model-specs">
-        <span>⚡ ~30 tok/s</span>
-        <span>📝 128K context</span>
-        <span>🏆 253B params</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PRICING -->
-<section class="pricing-section">
-  <div class="section-title">Harga</div>
-  <div class="section-heading">Pilih Paket yang Sesuai</div>
-  <div class="pricing-grid">
-    
-    <!-- FREE -->
-    <div class="price-card">
-      <div class="plan-name">Starter</div>
-      <div class="plan-desc">Untuk coba-coba dan prototyping</div>
-      <div class="price">
-        <span class="currency">Rp</span><span class="amount">0</span>
-        <span class="period">/bulan</span>
-      </div>
-      <ul class="features">
-        <li><span class="check">✓</span> 100 request/hari</li>
-        <li><span class="check">✓</span> opsora-fast & opsora-brain</li>
-        <li><span class="check">✓</span> 1 API key</li>
-        <li><span class="check">✓</span> Max 1K tokens/request</li>
-        <li><span class="check">✓</span> Community support</li>
-      </ul>
-      <a href="#" class="cta-btn cta-outline">Mulai Gratis</a>
+  <div class="container hero-content">
+    <div class="badge-nvidia reveal"><span class="dot"></span> Powered by NVIDIA AI Enterprise</div>
+    <h1 class="reveal">Satu API. Semua AI.</h1>
+    <p class="hero-sub reveal">Akses 102+ model AI tercanggih dari satu endpoint. OpenAI-compatible. Bayar pakai QRIS. Mulai gratis.</p>
+    <div class="hero-ctas reveal">
+      <a href="#cta" class="btn btn-primary btn-lg">Coba Gratis →</a>
+      <a href="#quickstart" class="btn btn-outline btn-lg">Lihat Dokumentasi</a>
     </div>
 
-    <!-- PRO -->
-    <div class="price-card popular">
-      <div class="popular-badge">Paling Populer</div>
-      <div class="plan-name">Pro</div>
-      <div class="plan-desc">Untuk startup dan developer</div>
-      <div class="price">
-        <span class="currency">Rp</span><span class="amount">299K</span>
-        <span class="period">/bulan</span>
-      </div>
-      <ul class="features">
-        <li><span class="check">✓</span> <strong>10.000 request/bulan</strong></li>
-        <li><span class="check">✓</span> Semua 6 model</li>
-        <li><span class="check">✓</span> 3 API keys</li>
-        <li><span class="check">✓</span> Max 8K tokens/request</li>
-        <li><span class="check">✓</span> Streaming support</li>
-        <li><span class="check">✓</span> Priority support (WhatsApp)</li>
-        <li><span class="check">✓</span> 99.5% uptime SLA</li>
-      </ul>
-      <a href="#" class="cta-btn cta-primary">Pilih Pro</a>
-    </div>
-
-    <!-- BUSINESS -->
-    <div class="price-card">
-      <div class="plan-name">Business</div>
-      <div class="plan-desc">Untuk perusahaan dan high-volume</div>
-      <div class="price">
-        <span class="currency">Rp</span><span class="amount">999K</span>
-        <span class="period">/bulan</span>
-      </div>
-      <ul class="features">
-        <li><span class="check">✓</span> <strong>100.000 request/bulan</strong></li>
-        <li><span class="check">✓</span> Semua 6 model</li>
-        <li><span class="check">✓</span> Unlimited API keys</li>
-        <li><span class="check">✓</span> Max 32K tokens/request</li>
-        <li><span class="check">✓</span> Streaming + batch API</li>
-        <li><span class="check">✓</span> Dedicated support</li>
-        <li><span class="check">✓</span> 99.9% uptime SLA</li>
-        <li><span class="check">✓</span> Custom rate limit</li>
-      </ul>
-      <a href="#" class="cta-btn cta-outline">Hubungi Sales</a>
-    </div>
-
-  </div>
-</section>
-
-<!-- COMPARISON -->
-<section class="compare-section">
-  <div class="section-title">Perbandingan</div>
-  <div class="section-heading">Opsora vs Lainnya</div>
-  <table class="compare-table">
-    <thead>
-      <tr>
-        <th>Fitur</th>
-        <th>Opsora Agent</th>
-        <th>OpenAI</th>
-        <th>Lokal GPU</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Harga per bulan</td>
-        <td class="yes">Mulai Rp 0</td>
-        <td>$20-200+</td>
-        <td>Rp 5jt+ (hardware)</td>
-      </tr>
-      <tr>
-        <td>Setup GPU</td>
-        <td class="yes">Tidak perlu ✓</td>
-        <td class="yes">Tidak perlu ✓</td>
-        <td class="no">Wajib setup sendiri</td>
-      </tr>
-      <tr>
-        <td>Bahasa Indonesia</td>
-        <td class="yes">Optimized ✓</td>
-        <td>Bisa</td>
-        <td>Tergantung model</td>
-      </tr>
-      <tr>
-        <td>OpenAI-compatible API</td>
-        <td class="yes">✓</td>
-        <td class="yes">✓</td>
-        <td class="no">Perlu setup sendiri</td>
-      </tr>
-      <tr>
-        <td>Streaming</td>
-        <td class="yes">✓</td>
-        <td class="yes">✓</td>
-        <td>Tergantung setup</td>
-      </tr>
-      <tr>
-        <td>Support lokal</td>
-        <td class="yes">WhatsApp + ID</td>
-        <td class="no">Email (EN only)</td>
-        <td class="no">Self-managed</td>
-      </tr>
-      <tr>
-        <td>Latency dari Indonesia</td>
-        <td class="yes">Rendah (SG)</td>
-        <td>Sedang (US)</td>
-        <td class="yes">Sangat rendah</td>
-      </tr>
-      <tr>
-        <td>Pembayaran</td>
-        <td class="yes">Transfer/QRIS</td>
-        <td class="no">Kartu kredit USD</td>
-        <td>—</td>
-      </tr>
-    </tbody>
-  </table>
-</section>
-
-<!-- CODE SNIPPET -->
-<section class="code-section">
-  <div class="section-title">Quick Start</div>
-  <div class="section-heading">3 Baris untuk Mulai</div>
-  <div class="code-block">
-<span class="keyword">from</span> openai <span class="keyword">import</span> OpenAI
+    <div class="code-card reveal">
+      <div class="code-card-header"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+      <code><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
 
 client = OpenAI(
-    base_url=<span class="string">"https://api.opsora.id/v1"</span>,
-    api_key=<span class="string">"opsora-sk-xxxxx"</span>,
+    base_url=<span class="str">"https://api.opsora.id/v1"</span>,
+    api_key=<span class="str">"opsora-sk-xxxxx"</span>,
 )
 
-response = client.chat.completions.create(
-    model=<span class="string">"opsora-brain"</span>,
-    messages=[{<span class="string">"role"</span>: <span class="string">"user"</span>,
-              <span class="string">"content"</span>: <span class="string">"Halo, apa kabar?"</span>}]
-)
+response = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="str">"opsora-brain"</span>,
+    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Halo!"</span>}]
+)</code>
+    </div>
 
-<span class="func">print</span>(response.choices[<span class="keyword">0</span>].message.content)
-<span class="comment"># → "Halo! Saya Opsora Agent, siap membantu Anda..."</span>
+    <div class="trust-bar reveal">
+      <span>🧠 102+ Models</span>
+      <span>🔌 OpenAI Compatible</span>
+      <span>🇸🇬 Server Singapore</span>
+      <span>💬 Support WhatsApp</span>
+    </div>
   </div>
 </section>
 
-<!-- CTA FOOTER -->
-<section class="cta-footer">
-  <h2>Siap Mulai?</h2>
-  <p>Daftar sekarang, dapatkan 100 request gratis per hari. Tanpa kartu kredit.</p>
-  <a href="#" class="cta-btn cta-primary">Daftar Gratis →</a>
+<!-- ====== PROBLEM → SOLVE ====== -->
+<section>
+  <div class="container">
+    <h2 class="section-title reveal">Developer Indonesia sering kesulitan:</h2>
+    <p class="section-sub reveal">Masalah yang hampir semua developer alami</p>
+
+    <div class="ps-grid">
+      <div class="ps-card reveal reveal-delay-1">
+        <span class="ps-icon">❌</span>
+        <strong>OpenAI mahal, harus pakai kartu kredit USD</strong>
+        <p>Butuh kartu kredit Visa/Mastercard dan bayar dalam dollar. Banyak developer Indonesia yang tidak punya akses.</p>
+      </div>
+      <div class="ps-card reveal reveal-delay-2">
+        <span class="ps-icon">❌</span>
+        <strong>Setup GPU sendiri ribet dan mahal</strong>
+        <p>Sewa GPU mahal, instalasi driver CUDA kompleks, dan maintenance memakan waktu yang seharusnya untuk develop produk.</p>
+      </div>
+      <div class="ps-card reveal reveal-delay-3">
+        <span class="ps-icon">❌</span>
+        <strong>Latency tinggi karena server di US/Europe</strong>
+        <p>Response time 2-5 detik dari server luar negeri.用户体验 jadi lambat, user tidak sabar menunggu.</p>
+      </div>
+    </div>
+
+    <div class="ps-divider reveal">↓</div>
+
+    <h2 class="section-title reveal" style="color:var(--accent)">Opsora menyelesaikan semua itu:</h2>
+    <p class="section-sub reveal">Solusi yang dirancang khusus untuk developer Indonesia</p>
+
+    <div class="ps-grid">
+      <div class="ps-card reveal reveal-delay-1">
+        <span class="ps-icon">✅</span>
+        <strong>Harga Rupiah, bayar pakai transfer bank atau QRIS</strong>
+        <p>Tidak perlu kartu kredit. Bayar dengan metode yang sudah kamu punya — GoPay, OVO, transfer BCA, Mandiri, dll.</p>
+      </div>
+      <div class="ps-card reveal reveal-delay-2">
+        <span class="ps-icon">✅</span>
+        <strong>102+ model AI tanpa perlu setup GPU sendiri</strong>
+        <p>Langsung pakai. Satu API key, akses ke semua model — dari yang tercepat sampai yang paling powerful.</p>
+      </div>
+      <div class="ps-card reveal reveal-delay-3">
+        <span class="ps-icon">✅</span>
+        <strong>Server Singapore, latency rendah dari Indonesia</strong>
+        <p>Server NVIDIA AI Enterprise di Singapore. Response time &lt;500ms dari seluruh Indonesia.</p>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- FOOTER -->
+<!-- ====== MODEL LINEUP ====== -->
+<section id="models">
+  <div class="container">
+    <h2 class="section-title reveal">Model Lineup</h2>
+    <p class="section-sub reveal">6 Model, 1 API Endpoint</p>
+
+    <div class="model-grid">
+      <div class="model-card reveal reveal-delay-1">
+        <span class="model-badge badge-green">⚡ TERCEPAT</span>
+        <div class="model-name">opsora-fast</div>
+        <div class="model-engine">DeepSeek V4 Flash</div>
+        <div class="model-specs">
+          <span>⚡ 150 tok/s</span>
+          <span>📝 128K ctx</span>
+          <span>💬 Real-time</span>
+        </div>
+      </div>
+
+      <div class="model-card reveal reveal-delay-2">
+        <span class="model-badge badge-purple">🔥 POPULAR</span>
+        <div class="model-name">opsora-brain</div>
+        <div class="model-engine">Llama 3.1 70B</div>
+        <div class="model-specs">
+          <span>⚡ 80 tok/s</span>
+          <span>📝 128K ctx</span>
+          <span>🎯 General</span>
+        </div>
+      </div>
+
+      <div class="model-card reveal reveal-delay-3">
+        <span class="model-badge badge-purple">💻 DEV</span>
+        <div class="model-name">opsora-code</div>
+        <div class="model-engine">CodeLlama 70B</div>
+        <div class="model-specs">
+          <span>⚡ 80 tok/s</span>
+          <span>📝 128K ctx</span>
+          <span>💻 Coding</span>
+        </div>
+      </div>
+
+      <div class="model-card reveal reveal-delay-1">
+        <span class="model-badge badge-coral">🆕 BARU</span>
+        <div class="model-name">opsora-vision</div>
+        <div class="model-engine">Llama 3.2 90B Vision</div>
+        <div class="model-specs">
+          <span>⚡ 60 tok/s</span>
+          <span>📝 128K ctx</span>
+          <span>👁️ Image+Text</span>
+        </div>
+      </div>
+
+      <div class="model-card reveal reveal-delay-2">
+        <span class="model-badge badge-gold">🧠 POWER</span>
+        <div class="model-name">opsora-reason</div>
+        <div class="model-engine">DeepSeek V4 Pro</div>
+        <div class="model-specs">
+          <span>⚡ 40 tok/s</span>
+          <span>📝 128K ctx</span>
+          <span>🧠 Reasoning</span>
+        </div>
+      </div>
+
+      <div class="model-card reveal reveal-delay-3">
+        <span class="model-badge badge-gold">👑 FLAGSHIP</span>
+        <div class="model-name">opsora-max</div>
+        <div class="model-engine">Nemotron Ultra 253B</div>
+        <div class="model-specs">
+          <span>⚡ 30 tok/s</span>
+          <span>📝 128K ctx</span>
+          <span>🏆 Max Quality</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PRICING ====== -->
+<section id="pricing">
+  <div class="container">
+    <h2 class="section-title reveal">Harga</h2>
+    <p class="section-sub reveal">Pilih Paket yang Sesuai</p>
+
+    <div class="pricing-grid">
+
+      <!-- FREE -->
+      <div class="price-card reveal">
+        <div class="price-name">Free</div>
+        <div class="price-amount">Rp 0<small>/bulan</small></div>
+        <div class="price-daily">Gratis selamanya</div>
+        <ul class="price-features">
+          <li>100 request/hari</li>
+          <li>2 model (fast + brain)</li>
+          <li>1 API key</li>
+          <li>Community support</li>
+        </ul>
+        <a href="#cta" class="btn btn-outline btn-block">Mulai Gratis</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="price-card reveal reveal-delay-1">
+        <div class="price-name">Pro</div>
+        <div class="price-amount">Rp 149K<small>/bulan</small></div>
+        <div class="price-daily">Rp 4.900/hari — lebih murah dari kopi ☕</div>
+        <ul class="price-features">
+          <li>10.000 request/bulan</li>
+          <li>5M tokens/bulan</li>
+          <li>Semua 6 model</li>
+          <li>5 API keys</li>
+          <li>Streaming</li>
+          <li>Support email 24h</li>
+        </ul>
+        <div class="price-overage">Overage: Rp 45/1K tokens</div>
+        <a href="#cta" class="btn btn-outline btn-block">Pilih Pro</a>
+      </div>
+
+      <!-- BUSINESS (FEATURED) -->
+      <div class="price-card featured reveal reveal-delay-2">
+        <div class="popular-tag">⭐ PALING POPULER</div>
+        <div class="price-name">Business</div>
+        <div class="price-amount">Rp 499K<small>/bulan</small></div>
+        <div class="price-daily">Rp 16.400/hari — kurang dari makan siang 🍱</div>
+        <ul class="price-features">
+          <li>50.000 request/bulan <strong>(5× Pro!)</strong></li>
+          <li>25M tokens/bulan <strong>(5× Pro!)</strong></li>
+          <li>Semua 6 model + Agent Router</li>
+          <li>25 API keys</li>
+          <li>Streaming + Batch</li>
+          <li>WhatsApp priority support</li>
+          <li>99.9% SLA</li>
+        </ul>
+        <div class="price-overage">Overage: Rp 35/1K tokens (lebih murah!)</div>
+        <a href="#cta" class="btn btn-purple btn-block">Pilih Business</a>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="price-card reveal reveal-delay-3" style="opacity:0.88">
+        <div class="price-name">Enterprise</div>
+        <div class="price-amount">Custom</div>
+        <div class="price-daily">Untuk perusahaan besar</div>
+        <ul class="price-features">
+          <li>Unlimited requests</li>
+          <li>Unlimited API keys</li>
+          <li>Custom models</li>
+          <li>Dedicated support</li>
+          <li>99.99% SLA</li>
+          <li>Custom SLA terms</li>
+        </ul>
+        <a href="#cta" class="btn btn-outline btn-block">Hubungi Sales</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====== COMPARISON ====== -->
+<section>
+  <div class="container">
+    <h2 class="section-title reveal">Kenapa Opsora?</h2>
+    <p class="section-sub reveal">Perbandingan lengkap dengan alternatif lain</p>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>Fitur</th>
+            <th class="col-opsora">Opsora</th>
+            <th>OpenAI</th>
+            <th>Setup Sendiri</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Harga/bulan</td>
+            <td class="col-opsora"><span class="check-yes">Mulai Rp 0</span></td>
+            <td>$20-200+ (Rp 320K-3.2jt)</td>
+            <td>Rp 5jt+ hardware</td>
+          </tr>
+          <tr>
+            <td>Model tersedia</td>
+            <td class="col-opsora"><span class="check-yes">102+ ✅</span></td>
+            <td>5-6</td>
+            <td>1-2</td>
+          </tr>
+          <tr>
+            <td>Bayar</td>
+            <td class="col-opsora"><span class="check-yes">QRIS/Transfer ✅</span></td>
+            <td>Kartu Kredit USD</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Setup GPU</td>
+            <td class="col-opsora"><span class="check-yes">Tidak perlu ✅</span></td>
+            <td>Tidak perlu</td>
+            <td>Wajib setup</td>
+          </tr>
+          <tr>
+            <td>Support</td>
+            <td class="col-opsora"><span class="check-yes">WhatsApp ID ✅</span></td>
+            <td>Email EN</td>
+            <td>Self-managed</td>
+          </tr>
+          <tr>
+            <td>Latency</td>
+            <td class="col-opsora"><span class="check-yes">Rendah (SG) ✅</span></td>
+            <td>Sedang (US)</td>
+            <td>Sangat rendah</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== QUICK START ====== -->
+<section id="quickstart">
+  <div class="container">
+    <h2 class="section-title reveal">Quick Start</h2>
+    <p class="section-sub reveal">3 baris kode untuk mulai</p>
+
+    <div class="reveal">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab(event,'py')">Python</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab(event,'js')">Node.js</button>
+        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab(event,'curl')">cURL</button>
+      </div>
+
+      <div class="code-card code-card-tabbed">
+        <div id="panel-py" class="tab-panel active" role="tabpanel">
+          <code><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="str">"https://api.opsora.id/v1"</span>,
+    api_key=<span class="str">"opsora-sk-xxxxx"</span>,
+)
+
+response = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="str">"opsora-brain"</span>,
+    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Halo!"</span>}]
+)
+
+<span class="fn">print</span>(response.choices[<span class="num">0</span>].message.content)</code>
+        </div>
+
+        <div id="panel-js" class="tab-panel" role="tabpanel">
+          <code><span class="kw">import</span> OpenAI <span class="kw">from</span> <span class="str">'openai'</span>;
+
+<span class="kw">const</span> client = <span class="kw">new</span> <span class="fn">OpenAI</span>({
+  baseURL: <span class="str">'https://api.opsora.id/v1'</span>,
+  apiKey: <span class="str">'opsora-sk-xxxxx'</span>,
+});
+
+<span class="kw">const</span> response = <span class="kw">await</span> client.chat.completions.<span class="fn">create</span>({
+  model: <span class="str">'opsora-brain'</span>,
+  messages: [{ role: <span class="str">'user'</span>, content: <span class="str">'Halo!'</span> }],
+});
+
+console.<span class="fn">log</span>(response.choices[<span class="num">0</span>].message.content);</code>
+        </div>
+
+        <div id="panel-curl" class="tab-panel" role="tabpanel">
+          <code><span class="fn">curl</span> https://api.opsora.id/v1/chat/completions \
+  -H <span class="str">"Authorization: Bearer opsora-sk-xxxxx"</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{
+    "model": "opsora-brain",
+    "messages": [
+      {"role": "user", "content": "Halo!"}
+    ]
+  }'</span></code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== CTA FOOTER ====== -->
+<section id="cta" class="cta-section">
+  <div class="container">
+    <h2 class="reveal">Siap Mulai?</h2>
+    <p class="cta-sub reveal">Daftar sekarang, dapatkan 100 request/hari gratis. Tanpa kartu kredit.</p>
+    <div class="reveal">
+      <a href="#" class="btn btn-primary btn-lg" style="font-size:1.1rem;padding:16px 40px">Daftar Gratis →</a>
+    </div>
+    <p class="cta-small reveal">Atau hubungi kami di <strong>WhatsApp</strong> untuk demo</p>
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
 <footer>
-  <p>© 2026 Opsora — <a href="https://opsora.id">opsora.id</a> — AI API untuk Developer Indonesia</p>
-  <p style="margin-top: 8px;">Powered by NVIDIA AI Enterprise Infrastructure</p>
+  <div class="container">
+    <p>© 2026 Opsora — <a href="https://opsora.id" style="color:var(--primary)">opsora.id</a></p>
+    <p class="footer-powered">Powered by NVIDIA AI Enterprise Infrastructure</p>
+    <div class="footer-links">
+      <a href="#">GitHub</a>
+      <a href="#">Docs</a>
+      <a href="#">WhatsApp</a>
+      <a href="#">Email</a>
+    </div>
+  </div>
 </footer>
+
+<!-- ====== SCRIPTS ====== -->
+<script>
+// Tab switcher
+function switchTab(e, id) {
+  document.querySelectorAll('.tab-btn').forEach(function(t) {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  document.querySelectorAll('.tab-panel').forEach(function(p) {
+    p.classList.remove('active');
+  });
+  e.currentTarget.classList.add('active');
+  e.currentTarget.setAttribute('aria-selected', 'true');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// Scroll reveal via IntersectionObserver
+(function() {
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(function(el) {
+    observer.observe(el);
+  });
+})();
+</script>
+
+</body>
+</html>
