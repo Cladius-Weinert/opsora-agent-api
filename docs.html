@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opsora Agent API — Documentation</title>
+<meta name="description" content="Complete API reference for Opsora Agent API. OpenAI-compatible endpoints, model catalog, SDKs, rate limits, and error codes.">
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --lime: #BEFF00;
+  --purple: #763AFF;
+  --bg: #0A0A0F;
+  --bg-card: #111118;
+  --text: #E8E8F0;
+  --muted: #8888A0;
+  --border: #1E1E2A;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sidebar-w: 220px;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--bg);
+}
+
+/* ── TOP NAV ── */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topnav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topnav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.topnav-logo-mark {
+  width: 24px;
+  height: 24px;
+  background: var(--lime);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.topnav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.topnav-links a {
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.topnav-links a:hover {
+  color: var(--text);
+}
+
+.topnav-links .active {
+  color: var(--lime);
+}
+
+.topnav-cta {
+  background: var(--lime) !important;
+  color: var(--bg) !important;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.topnav-cta:hover {
+  opacity: 0.85;
+  color: var(--bg) !important;
+}
+
+/* ── LAYOUT ── */
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 56px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: sticky;
+  top: 56px;
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  padding: 32px 0 32px 24px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.sidebar-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-nav a {
+  display: block;
+  padding: 6px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-nav a:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-nav a.active {
+  color: var(--lime);
+  border-left-color: var(--lime);
+  background: rgba(190, 255, 0, 0.04);
+}
+
+.sidebar-mobile-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 4px;
+  margin: 16px 24px;
+  width: calc(100% - 48px);
+  text-align: left;
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 48px 48px 120px;
+  max-width: 900px;
+}
+
+/* ── SECTIONS ── */
+.doc-section {
+  margin-bottom: 72px;
+  scroll-margin-top: 80px;
+}
+
+.doc-section-title {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.doc-section-title .prefix {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.doc-section-desc {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 32px;
+  line-height: 1.65;
+}
+
+/* ── HEADINGS ── */
+h3 {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  margin-top: 36px;
+  letter-spacing: -0.01em;
+}
+
+h3:first-child {
+  margin-top: 0;
+}
+
+h4 {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  margin-top: 24px;
+}
+
+p {
+  margin-bottom: 16px;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+/* ── STEPS ── */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--lime);
+  color: var(--bg);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.step-content h4 {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.step-content p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.step-content a {
+  color: var(--lime);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.step-content a:hover {
+  border-bottom-color: var(--lime);
+}
+
+/* ── CODE BLOCKS ── */
+.code-block-wrapper {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 30, 42, 0.5);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  padding: 8px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.code-copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.code-copy-btn:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+.code-copy-btn.copied {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+pre {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  tab-size: 2;
+}
+
+.code-block-header + pre {
+  border-radius: 0 0 4px 4px;
+  border-top: none;
+}
+
+/* syntax colors */
+.syn-str { color: var(--lime); }
+.syn-kw { color: var(--purple); }
+.syn-cmt { color: var(--muted); font-style: italic; }
+.syn-num { color: #FF9F43; }
+.syn-fn { color: #64B5F6; }
+.syn-op { color: var(--muted); }
+
+code {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+/* inline code */
+p code, li code, td code, .step-content code {
+  background: rgba(190, 255, 0, 0.08);
+  color: var(--lime);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12.5px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--lime);
+  border-bottom-color: var(--lime);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.tab-panel pre {
+  border-radius: 0 0 4px 4px;
+  border-top: none;
+}
+
+/* ── TABLES ── */
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+thead th {
+  background: rgba(30, 30, 42, 0.5);
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+td .tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+td .tag-lime {
+  background: rgba(190, 255, 0, 0.1);
+  color: var(--lime);
+}
+
+td .tag-purple {
+  background: rgba(118, 58, 255, 0.15);
+  color: #A87BFF;
+}
+
+td .tag-muted {
+  background: rgba(136, 136, 160, 0.1);
+  color: var(--muted);
+}
+
+td .tag-red {
+  background: rgba(255, 82, 82, 0.1);
+  color: #FF5252;
+}
+
+td .tag-yellow {
+  background: rgba(255, 159, 67, 0.1);
+  color: #FF9F43;
+}
+
+/* ── ENDPOINT CARD ── */
+.endpoint {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+
+.endpoint-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(30, 30, 42, 0.3);
+}
+
+.endpoint-method {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.method-post {
+  background: rgba(190, 255, 0, 0.12);
+  color: var(--lime);
+}
+
+.method-get {
+  background: rgba(118, 58, 255, 0.15);
+  color: #A87BFF;
+}
+
+.endpoint-path {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.endpoint-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.endpoint-body {
+  padding: 24px;
+}
+
+.endpoint-body h4 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.endpoint-body h4:first-child {
+  margin-top: 0;
+}
+
+/* ── BADGE ── */
+.badge-required {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #FF5252;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge-optional {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── CHANGELOG ── */
+.changelog-entry {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.changelog-entry:last-child {
+  border-bottom: none;
+}
+
+.changelog-version {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lime);
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.changelog-date {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+.changelog-desc {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ── AUTH BOX ── */
+.auth-example {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-example .label {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.auth-example .value {
+  color: var(--lime);
+}
+
+/* ── SDK GRID ── */
+.sdk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sdk-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  transition: border-color 0.15s;
+}
+
+.sdk-card:hover {
+  border-color: var(--lime);
+}
+
+.sdk-card-name {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.sdk-card-install {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sdk-card-install code {
+  color: var(--lime);
+  background: rgba(190, 255, 0, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.sdk-card-type {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── BACK TO TOP ── */
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.15s, border-color 0.15s;
+  z-index: 100;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+}
+
+.back-to-top:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .sidebar {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    width: 260px;
+    height: calc(100vh - 56px);
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    z-index: 150;
+    padding: 24px;
+  }
+
+  .sidebar.open {
+    display: block;
+  }
+
+  .sidebar-mobile-toggle {
+    display: block;
+  }
+
+  .main {
+    padding: 24px 20px 80px;
+  }
+
+  .topnav-links .hide-mobile {
+    display: none;
+  }
+
+  .endpoint-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .endpoint-desc {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .sdk-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .hero-links {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOP NAV ── -->
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="index.html" class="topnav-logo">
+      <span class="topnav-logo-mark">O</span>
+      opsora api
+    </a>
+    <div class="topnav-links">
+      <a href="index.html" class="hide-mobile">landing</a>
+      <a href="docs.html" class="active">docs</a>
+      <a href="#quickstart" class="hide-mobile">guide</a>
+      <a href="#endpoints" class="hide-mobile">endpoints</a>
+      <a href="index.html#pricing" class="hide-mobile">pricing</a>
+      <a href="#quickstart" class="topnav-cta">get api key</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── SIDEBAR MOBILE TOGGLE ── -->
+<button class="sidebar-mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle navigation">
+  ☰ navigation
+</button>
+
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-label">documentation</div>
+  <ul class="sidebar-nav" id="sidebar-nav">
+    <li><a href="#quickstart">quick start</a></li>
+    <li><a href="#authentication">authentication</a></li>
+    <li><a href="#endpoints">endpoints</a></li>
+    <li><a href="#models">model catalog</a></li>
+    <li><a href="#errors">error codes</a></li>
+    <li><a href="#sdks">sdks &amp; libraries</a></li>
+    <li><a href="#rate-limits">rate limits</a></li>
+    <li><a href="#changelog">changelog</a></li>
+  </ul>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+<!-- ════════════════════════════════════════ -->
+<!-- QUICK START -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="quickstart">
+  <h2 class="doc-section-title"><span class="prefix">// </span>quick start</h2>
+  <p class="doc-section-desc">Get started in 3 steps. You'll be making API calls in under 2 minutes.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Get your API key</h4>
+        <p>Sign up at <a href="#quickstart">opsora.ai/dashboard</a> and generate an API key. Keys start with <code>opsora-sk-</code> and are shown once — save it somewhere safe.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Install the OpenAI SDK</h4>
+        <p>Opsora is fully OpenAI-compatible. Use the SDK you already know.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>install</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code><span class="syn-cmt"># Python</span>
+pip install openai
+
+<span class="syn-cmt"># Node.js</span>
+npm install openai</code></pre>
+  </div>
+
+  <div class="step" style="margin-top: 24px;">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Make your first request</h4>
+      <p>Pick your language below and copy the example.</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px;">
+    <div class="tabs" data-tab-group="quickstart">
+      <button class="tab-btn active" data-tab="python">Python</button>
+      <button class="tab-btn" data-tab="javascript">JavaScript</button>
+      <button class="tab-btn" data-tab="curl">cURL</button>
+    </div>
+
+    <div class="tab-panel active" data-tab-group="quickstart" data-tab="python">
+      <pre><code><span class="syn-kw">from</span> openai <span class="syn-kw">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="syn-str">"https://api.opsora.ai/v1"</span>,
+    api_key=<span class="syn-str">"opsora-sk-xxxxx"</span>,
+)
+
+response = client.chat.completions.create(
+    model=<span class="syn-str">"opsora-fast"</span>,
+    messages=[
+        {<span class="syn-str">"role"</span>: <span class="syn-str">"user"</span>, <span class="syn-str">"content"</span>: <span class="syn-str">"Explain quantum entanglement in one sentence."</span>}
+    ],
+)
+
+print(response.choices[<span class="syn-num">0</span>].message.content)</code></pre>
+    </div>
+
+    <div class="tab-panel" data-tab-group="quickstart" data-tab="javascript">
+      <pre><code><span class="syn-kw">import</span> OpenAI <span class="syn-kw">from</span> <span class="syn-str">"openai"</span>;
+
+<span class="syn-kw">const</span> client = <span class="syn-kw">new</span> <span class="syn-fn">OpenAI</span>({
+  baseURL: <span class="syn-str">"https://api.opsora.ai/v1"</span>,
+  apiKey: <span class="syn-str">"opsora-sk-xxxxx"</span>,
+});
+
+<span class="syn-kw">const</span> response = <span class="syn-kw">await</span> client.chat.completions.<span class="syn-fn">create</span>({
+  model: <span class="syn-str">"opsora-fast"</span>,
+  messages: [
+    { role: <span class="syn-str">"user"</span>, content: <span class="syn-str">"Explain quantum entanglement in one sentence."</span> }
+  ],
+});
+
+console.<span class="syn-fn">log</span>(response.choices[<span class="syn-num">0</span>].message.content);</code></pre>
+    </div>
+
+    <div class="tab-panel" data-tab-group="quickstart" data-tab="curl">
+      <pre><code>curl https://api.opsora.ai/v1/chat/completions \
+  -H <span class="syn-str">"Content-Type: application/json"</span> \
+  -H <span class="syn-str">"Authorization: Bearer opsora-sk-xxxxx"</span> \
+  -d <span class="syn-str">'{
+    "model": "opsora-fast",
+    "messages": [
+      {"role": "user", "content": "Explain quantum entanglement in one sentence."}
+    ]
+  }'</span></code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- AUTHENTICATION -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="authentication">
+  <h2 class="doc-section-title"><span class="prefix">// </span>authentication</h2>
+  <p class="doc-section-desc">All API requests require a Bearer token in the <code>Authorization</code> header. Get your key from the dashboard.</p>
+
+  <h3>Bearer Token</h3>
+  <p>Include your API key in every request via the <code>Authorization</code> header. Do not embed it in query strings or request bodies.</p>
+
+  <div class="auth-example">
+    <span class="label">Authorization:</span>
+    <span class="value">Bearer opsora-sk-xxxxx</span>
+  </div>
+
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>example header</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code>Authorization: Bearer opsora-sk-xxxxx
+Content-Type: application/json</code></pre>
+  </div>
+
+  <h3>Security Best Practices</h3>
+  <div class="card">
+    <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+      <li style="font-size: 14px; color: var(--muted);">→ Never commit API keys to source control</li>
+      <li style="font-size: 14px; color: var(--muted);">→ Use environment variables: <code>OPSORA_API_KEY</code></li>
+      <li style="font-size: 14px; color: var(--muted);">→ Rotate keys immediately if exposed</li>
+      <li style="font-size: 14px; color: var(--muted);">→ Use separate keys for dev / staging / production</li>
+    </ul>
+  </div>
+
+  <h3>Rate Limits per Tier</h3>
+  <p>Authentication also determines your rate limit tier. See <a href="#rate-limits" style="color: var(--lime);">rate limits</a> for full details.</p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Requests/min</th>
+          <th>Tokens/min</th>
+          <th>Burst</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-muted">Free</span></td>
+          <td>10</td>
+          <td>5,000</td>
+          <td>20</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-lime">Dev</span></td>
+          <td>60</td>
+          <td>50,000</td>
+          <td>120</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">Team</span></td>
+          <td>200</td>
+          <td>200,000</td>
+          <td>400</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">Enterprise</span></td>
+          <td>unlimited</td>
+          <td>unlimited</td>
+          <td>unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- ENDPOINTS -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="endpoints">
+  <h2 class="doc-section-title"><span class="prefix">// </span>endpoints reference</h2>
+  <p class="doc-section-desc">Base URL: <code>https://api.opsora.ai</code>. All endpoints are OpenAI-compatible where applicable.</p>
+
+  <!-- POST /v1/chat/completions -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-post">POST</span>
+      <span class="endpoint-path">/v1/chat/completions</span>
+      <span class="endpoint-desc">Create a chat completion</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>Parameters</h4>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>model</code></td>
+              <td>string</td>
+              <td><span class="badge-required">required</span></td>
+              <td>Model alias: <code>opsora-fast</code>, <code>opsora-brain</code>, <code>opsora-code</code>, <code>opsora-vision</code>, <code>opsora-reason</code>, <code>opsora-max</code></td>
+            </tr>
+            <tr>
+              <td><code>messages</code></td>
+              <td>array</td>
+              <td><span class="badge-required">required</span></td>
+              <td>Array of message objects with <code>role</code> and <code>content</code></td>
+            </tr>
+            <tr>
+              <td><code>temperature</code></td>
+              <td>number</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Sampling temperature (0–2). Default: <code>1.0</code></td>
+            </tr>
+            <tr>
+              <td><code>max_tokens</code></td>
+              <td>integer</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Maximum tokens in the response. Default: model's max output</td>
+            </tr>
+            <tr>
+              <td><code>stream</code></td>
+              <td>boolean</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Enable SSE streaming. Default: <code>false</code></td>
+            </tr>
+            <tr>
+              <td><code>top_p</code></td>
+              <td>number</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Nucleus sampling threshold. Default: <code>1.0</code></td>
+            </tr>
+            <tr>
+              <td><code>stop</code></td>
+              <td>string | array</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Up to 4 stop sequences</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Request Body</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"model"</span>: <span class="syn-str">"opsora-fast"</span>,
+  <span class="syn-str">"messages"</span>: [
+    {
+      <span class="syn-str">"role"</span>: <span class="syn-str">"system"</span>,
+      <span class="syn-str">"content"</span>: <span class="syn-str">"You are a helpful assistant."</span>
+    },
+    {
+      <span class="syn-str">"role"</span>: <span class="syn-str">"user"</span>,
+      <span class="syn-str">"content"</span>: <span class="syn-str">"What is the capital of Indonesia?"</span>
+    }
+  ],
+  <span class="syn-str">"temperature"</span>: <span class="syn-num">0.7</span>,
+  <span class="syn-str">"max_tokens"</span>: <span class="syn-num">256</span>
+}</code></pre>
+      </div>
+
+      <h4>Response</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json — 200 OK</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"id"</span>: <span class="syn-str">"chatcmpl-ops-7f3a9b2c"</span>,
+  <span class="syn-str">"object"</span>: <span class="syn-str">"chat.completion"</span>,
+  <span class="syn-str">"created"</span>: <span class="syn-num">1753833600</span>,
+  <span class="syn-str">"model"</span>: <span class="syn-str">"opsora-fast"</span>,
+  <span class="syn-str">"choices"</span>: [
+    {
+      <span class="syn-str">"index"</span>: <span class="syn-num">0</span>,
+      <span class="syn-str">"message"</span>: {
+        <span class="syn-str">"role"</span>: <span class="syn-str">"assistant"</span>,
+        <span class="syn-str">"content"</span>: <span class="syn-str">"The capital of Indonesia is Jakarta."</span>
+      },
+      <span class="syn-str">"finish_reason"</span>: <span class="syn-str">"stop"</span>
+    }
+  ],
+  <span class="syn-str">"usage"</span>: {
+    <span class="syn-str">"prompt_tokens"</span>: <span class="syn-num">24</span>,
+    <span class="syn-str">"completion_tokens"</span>: <span class="syn-num">9</span>,
+    <span class="syn-str">"total_tokens"</span>: <span class="syn-num">33</span>
+  }
+}</code></pre>
+      </div>
+
+      <h4>Error Responses</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json — 401 Unauthorized</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"error"</span>: {
+    <span class="syn-str">"type"</span>: <span class="syn-str">"authentication_error"</span>,
+    <span class="syn-str">"message"</span>: <span class="syn-str">"Invalid or missing API key."</span>,
+    <span class="syn-str">"code"</span>: <span class="syn-num">401</span>
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST /v1/completions -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-post">POST</span>
+      <span class="endpoint-path">/v1/completions</span>
+      <span class="endpoint-desc">Create a text completion</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>Parameters</h4>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>model</code></td>
+              <td>string</td>
+              <td><span class="badge-required">required</span></td>
+              <td>Model alias to use</td>
+            </tr>
+            <tr>
+              <td><code>prompt</code></td>
+              <td>string | array</td>
+              <td><span class="badge-required">required</span></td>
+              <td>The prompt to generate completions for</td>
+            </tr>
+            <tr>
+              <td><code>max_tokens</code></td>
+              <td>integer</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Maximum tokens to generate. Default: <code>16</code></td>
+            </tr>
+            <tr>
+              <td><code>temperature</code></td>
+              <td>number</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Sampling temperature (0–2). Default: <code>1.0</code></td>
+            </tr>
+            <tr>
+              <td><code>stream</code></td>
+              <td>boolean</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Enable SSE streaming. Default: <code>false</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Request Body</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"model"</span>: <span class="syn-str">"opsora-brain"</span>,
+  <span class="syn-str">"prompt"</span>: <span class="syn-str">"Write a haiku about distributed systems:"</span>,
+  <span class="syn-str">"max_tokens"</span>: <span class="syn-num">64</span>,
+  <span class="syn-str">"temperature"</span>: <span class="syn-num">0.9</span>
+}</code></pre>
+      </div>
+
+      <h4>Response</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json — 200 OK</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"id"</span>: <span class="syn-str">"cmpl-ops-4e8d1a3f"</span>,
+  <span class="syn-str">"object"</span>: <span class="syn-str">"text_completion"</span>,
+  <span class="syn-str">"created"</span>: <span class="syn-num">1753833600</span>,
+  <span class="syn-str">"model"</span>: <span class="syn-str">"opsora-brain"</span>,
+  <span class="syn-str">"choices"</span>: [
+    {
+      <span class="syn-str">"text"</span>: <span class="syn-str">"\nNodes whisper secrets,\nAcross the silent network—\nConsensus blooms soft."</span>,
+      <span class="syn-str">"index"</span>: <span class="syn-num">0</span>,
+      <span class="syn-str">"finish_reason"</span>: <span class="syn-str">"stop"</span>
+    }
+  ],
+  <span class="syn-str">"usage"</span>: {
+    <span class="syn-str">"prompt_tokens"</span>: <span class="syn-num">11</span>,
+    <span class="syn-str">"completion_tokens"</span>: <span class="syn-num">22</span>,
+    <span class="syn-str">"total_tokens"</span>: <span class="syn-num">33</span>
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /v1/models -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <span class="endpoint-path">/v1/models</span>
+      <span class="endpoint-desc">List available models</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>Parameters</h4>
+      <p style="color: var(--muted); font-size: 14px;">No parameters required.</p>
+
+      <h4>Response</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json — 200 OK</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"object"</span>: <span class="syn-str">"list"</span>,
+  <span class="syn-str">"data"</span>: [
+    {
+      <span class="syn-str">"id"</span>: <span class="syn-str">"opsora-fast"</span>,
+      <span class="syn-str">"object"</span>: <span class="syn-str">"model"</span>,
+      <span class="syn-str">"created"</span>: <span class="syn-num">1753833600</span>,
+      <span class="syn-str">"owned_by"</span>: <span class="syn-str">"opsora"</span>,
+      <span class="syn-str">"engine"</span>: <span class="syn-str">"deepseek-v4-flash"</span>
+    },
+    {
+      <span class="syn-str">"id"</span>: <span class="syn-str">"opsora-brain"</span>,
+      <span class="syn-str">"object"</span>: <span class="syn-str">"model"</span>,
+      <span class="syn-str">"created"</span>: <span class="syn-num">1753833600</span>,
+      <span class="syn-str">"owned_by"</span>: <span class="syn-str">"opsora"</span>,
+      <span class="syn-str">"engine"</span>: <span class="syn-str">"llama-3.1-70b"</span>
+    }
+    <span class="syn-cmt">// ... all 6 models</span>
+  ]
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /health -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <span class="endpoint-path">/health</span>
+      <span class="endpoint-desc">Health check</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>Parameters</h4>
+      <p style="color: var(--muted); font-size: 14px;">No parameters. No authentication required.</p>
+
+      <h4>Response</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json — 200 OK</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"status"</span>: <span class="syn-str">"healthy"</span>,
+  <span class="syn-str">"version"</span>: <span class="syn-str">"1.0.0"</span>,
+  <span class="syn-str">"models_available"</span>: <span class="syn-num">6</span>,
+  <span class="syn-str">"uptime_seconds"</span>: <span class="syn-num">847293</span>
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /v1/usage -->
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="endpoint-method method-get">GET</span>
+      <span class="endpoint-path">/v1/usage</span>
+      <span class="endpoint-desc">Get usage statistics</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>Parameters</h4>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>period</code></td>
+              <td>string</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td><code>day</code>, <code>week</code>, <code>month</code>. Default: <code>month</code></td>
+            </tr>
+            <tr>
+              <td><code>model</code></td>
+              <td>string</td>
+              <td><span class="badge-optional">optional</span></td>
+              <td>Filter by model alias</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Response</h4>
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>json — 200 OK</span>
+          <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre><code>{
+  <span class="syn-str">"period"</span>: <span class="syn-str">"month"</span>,
+  <span class="syn-str">"total_requests"</span>: <span class="syn-num">14523</span>,
+  <span class="syn-str">"total_tokens"</span>: <span class="syn-num">2847561</span>,
+  <span class="syn-str">"total_cost_usd"</span>: <span class="syn-num">1.42</span>,
+  <span class="syn-str">"by_model"</span>: {
+    <span class="syn-str">"opsora-fast"</span>: {
+      <span class="syn-str">"requests"</span>: <span class="syn-num">9801</span>,
+      <span class="syn-str">"tokens"</span>: <span class="syn-num">1923045</span>,
+      <span class="syn-str">"cost_usd"</span>: <span class="syn-num">0.58</span>
+    },
+    <span class="syn-str">"opsora-brain"</span>: {
+      <span class="syn-str">"requests"</span>: <span class="syn-num">4722</span>,
+      <span class="syn-str">"tokens"</span>: <span class="syn-num">924516</span>,
+      <span class="syn-str">"cost_usd"</span>: <span class="syn-num">0.84</span>
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- MODEL CATALOG -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="models">
+  <h2 class="doc-section-title"><span class="prefix">// </span>model catalog</h2>
+  <p class="doc-section-desc">6 models, 4 engines, 1 API. Every model has 128K context and automatic fallback routing.</p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Engine</th>
+          <th>Speed</th>
+          <th>Context</th>
+          <th>Best For</th>
+          <th>Input $/1M</th>
+          <th>Output $/1M</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>opsora-fast</code></td>
+          <td>DeepSeek V4 Flash</td>
+          <td><span class="tag tag-lime">150 tok/s</span></td>
+          <td>128K</td>
+          <td>real-time</td>
+          <td>$0.08</td>
+          <td>$0.15</td>
+        </tr>
+        <tr>
+          <td><code>opsora-brain</code></td>
+          <td>Llama 3.1 70B</td>
+          <td><span class="tag tag-lime">80 tok/s</span></td>
+          <td>128K</td>
+          <td>general</td>
+          <td>$0.20</td>
+          <td>$0.45</td>
+        </tr>
+        <tr>
+          <td><code>opsora-code</code></td>
+          <td>CodeLlama 70B</td>
+          <td><span class="tag tag-lime">80 tok/s</span></td>
+          <td>128K</td>
+          <td>coding</td>
+          <td>$0.20</td>
+          <td>$0.45</td>
+        </tr>
+        <tr>
+          <td><code>opsora-vision</code></td>
+          <td>Llama 3.2 90B Vision</td>
+          <td><span class="tag tag-purple">60 tok/s</span></td>
+          <td>128K</td>
+          <td>multimodal</td>
+          <td>$0.25</td>
+          <td>$0.55</td>
+        </tr>
+        <tr>
+          <td><code>opsora-reason</code></td>
+          <td>DeepSeek V4 Pro</td>
+          <td><span class="tag tag-purple">40 tok/s</span></td>
+          <td>128K</td>
+          <td>reasoning</td>
+          <td>$0.40</td>
+          <td>$0.90</td>
+        </tr>
+        <tr>
+          <td><code>opsora-max</code></td>
+          <td>Nemotron Ultra 253B</td>
+          <td><span class="tag tag-muted">30 tok/s</span></td>
+          <td>128K</td>
+          <td>flagship</td>
+          <td>$0.80</td>
+          <td>$1.80</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Model Selection Guide</h3>
+  <div class="card">
+    <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px;">
+      <div>
+        <strong style="color: var(--lime);">opsora-fast</strong>
+        <span style="color: var(--muted);"> — Chatbots, real-time apps, high-volume tasks. Lowest latency and cost.</span>
+      </div>
+      <div>
+        <strong style="color: var(--lime);">opsora-brain</strong>
+        <span style="color: var(--muted);"> — General-purpose tasks, summarization, Q&A. Balanced speed and quality.</span>
+      </div>
+      <div>
+        <strong style="color: var(--lime);">opsora-code</strong>
+        <span style="color: var(--muted);"> — Code generation, debugging, refactoring. Optimized for programming languages.</span>
+      </div>
+      <div>
+        <strong style="color: var(--lime);">opsora-vision</strong>
+        <span style="color: var(--muted);"> — Image analysis, OCR, visual Q&A. Accepts image URLs or base64.</span>
+      </div>
+      <div>
+        <strong style="color: var(--lime);">opsora-reason</strong>
+        <span style="color: var(--muted);"> — Math, logic, multi-step reasoning. Chain-of-thought by default.</span>
+      </div>
+      <div>
+        <strong style="color: var(--lime);">opsora-max</strong>
+        <span style="color: var(--muted);"> — Highest quality across all tasks. Use when accuracy matters most.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- ERROR CODES -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="errors">
+  <h2 class="doc-section-title"><span class="prefix">// </span>error codes</h2>
+  <p class="doc-section-desc">All errors return a consistent JSON structure with <code>type</code>, <code>message</code>, and <code>code</code> fields.</p>
+
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>error response format</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code>{
+  <span class="syn-str">"error"</span>: {
+    <span class="syn-str">"type"</span>: <span class="syn-str">"error_type"</span>,
+    <span class="syn-str">"message"</span>: <span class="syn-str">"Human-readable description."</span>,
+    <span class="syn-str">"code"</span>: <span class="syn-num">400</span>
+  }
+}</code></pre>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Suggestion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-yellow">400</span></td>
+          <td><code>invalid_request_error</code></td>
+          <td>The request body is malformed</td>
+          <td>Check JSON format and required fields</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">401</span></td>
+          <td><code>authentication_error</code></td>
+          <td>Invalid or missing API key</td>
+          <td>Verify your Bearer token</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">429</span></td>
+          <td><code>rate_limit_error</code></td>
+          <td>Too many requests</td>
+          <td>Wait or upgrade your plan</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">502</span></td>
+          <td><code>upstream_error</code></td>
+          <td>Backend model returned an error</td>
+          <td>Retry — fallback will activate</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">503</span></td>
+          <td><code>model_unavailable</code></td>
+          <td>Model is temporarily down</td>
+          <td>Use a different model alias</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">504</span></td>
+          <td><code>timeout_error</code></td>
+          <td>Upstream request timed out</td>
+          <td>Reduce <code>max_tokens</code> or retry</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Handling Errors</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>python — retry with backoff</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code><span class="syn-kw">import</span> time
+<span class="syn-kw">from</span> openai <span class="syn-kw">import</span> OpenAI, APIError, RateLimitError
+
+client = OpenAI(
+    base_url=<span class="syn-str">"https://api.opsora.ai/v1"</span>,
+    api_key=<span class="syn-str">"opsora-sk-xxxxx"</span>,
+)
+
+<span class="syn-kw">def</span> <span class="syn-fn">chat_with_retry</span>(messages, max_retries=<span class="syn-num">3</span>):
+    <span class="syn-kw">for</span> attempt <span class="syn-kw">in</span> range(max_retries):
+        <span class="syn-kw">try</span>:
+            <span class="syn-kw">return</span> client.chat.completions.create(
+                model=<span class="syn-str">"opsora-fast"</span>,
+                messages=messages,
+            )
+        <span class="syn-kw">except</span> RateLimitError:
+            wait = <span class="syn-num">2</span> ** attempt
+            print(<span class="syn-str">f"Rate limited. Retrying in </span>{wait}<span class="syn-str">s..."</span>)
+            time.sleep(wait)
+        <span class="syn-kw">except</span> APIError <span class="syn-kw">as</span> e:
+            print(<span class="syn-str">f"API error: </span>{e}<span class="syn-str">"</span>)
+            <span class="syn-kw">raise</span></code></pre>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SDKs & LIBRARIES -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="sdks">
+  <h2 class="doc-section-title"><span class="prefix">// </span>sdks &amp; libraries</h2>
+  <p class="doc-section-desc">Opsora is OpenAI-compatible. Use the official OpenAI SDK or any HTTP client — no custom library needed.</p>
+
+  <div class="sdk-grid">
+    <div class="sdk-card">
+      <div class="sdk-card-name">Python</div>
+      <div class="sdk-card-install"><code>pip install openai</code></div>
+      <div class="sdk-card-type">OpenAI-compatible</div>
+    </div>
+    <div class="sdk-card">
+      <div class="sdk-card-name">JavaScript</div>
+      <div class="sdk-card-install"><code>npm install openai</code></div>
+      <div class="sdk-card-type">OpenAI-compatible</div>
+    </div>
+    <div class="sdk-card">
+      <div class="sdk-card-name">cURL</div>
+      <div class="sdk-card-install"><code>built-in</code></div>
+      <div class="sdk-card-type">HTTP REST</div>
+    </div>
+    <div class="sdk-card">
+      <div class="sdk-card-name">Go</div>
+      <div class="sdk-card-install"><code>go-openai</code></div>
+      <div class="sdk-card-type">OpenAI-compatible</div>
+    </div>
+  </div>
+
+  <!-- Python SDK -->
+  <h3>Python</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>python — chat completion</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code><span class="syn-kw">from</span> openai <span class="syn-kw">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="syn-str">"https://api.opsora.ai/v1"</span>,
+    api_key=<span class="syn-str">"opsora-sk-xxxxx"</span>,
+)
+
+<span class="syn-cmt"># Standard completion</span>
+response = client.chat.completions.create(
+    model=<span class="syn-str">"opsora-code"</span>,
+    messages=[
+        {<span class="syn-str">"role"</span>: <span class="syn-str">"system"</span>, <span class="syn-str">"content"</span>: <span class="syn-str">"You are an expert Python developer."</span>},
+        {<span class="syn-str">"role"</span>: <span class="syn-str">"user"</span>, <span class="syn-str">"content"</span>: <span class="syn-str">"Write a decorator that caches function results."</span>}
+    ],
+    temperature=<span class="syn-num">0.3</span>,
+)
+
+print(response.choices[<span class="syn-num">0</span>].message.content)
+
+<span class="syn-cmt"># Streaming</span>
+stream = client.chat.completions.create(
+    model=<span class="syn-str">"opsora-fast"</span>,
+    messages=[{<span class="syn-str">"role"</span>: <span class="syn-str">"user"</span>, <span class="syn-str">"content"</span>: <span class="syn-str">"Tell me a story."</span>}],
+    stream=<span class="syn-kw">True</span>,
+)
+
+<span class="syn-kw">for</span> chunk <span class="syn-kw">in</span> stream:
+    <span class="syn-kw">if</span> chunk.choices[<span class="syn-num">0</span>].delta.content:
+        print(chunk.choices[<span class="syn-num">0</span>].delta.content, end=<span class="syn-str">""</span>)</code></pre>
+  </div>
+
+  <!-- JavaScript SDK -->
+  <h3>JavaScript / TypeScript</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>javascript — chat completion</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code><span class="syn-kw">import</span> OpenAI <span class="syn-kw">from</span> <span class="syn-str">"openai"</span>;
+
+<span class="syn-kw">const</span> client = <span class="syn-kw">new</span> <span class="syn-fn">OpenAI</span>({
+  baseURL: <span class="syn-str">"https://api.opsora.ai/v1"</span>,
+  apiKey: <span class="syn-str">"opsora-sk-xxxxx"</span>,
+});
+
+<span class="syn-cmt">// Standard completion</span>
+<span class="syn-kw">const</span> response = <span class="syn-kw">await</span> client.chat.completions.<span class="syn-fn">create</span>({
+  model: <span class="syn-str">"opsora-brain"</span>,
+  messages: [
+    { role: <span class="syn-str">"system"</span>, content: <span class="syn-str">"You are a helpful assistant."</span> },
+    { role: <span class="syn-str">"user"</span>, content: <span class="syn-str">"What are the SOLID principles?"</span> },
+  ],
+});
+
+console.<span class="syn-fn">log</span>(response.choices[<span class="syn-num">0</span>].message.content);
+
+<span class="syn-cmt">// Streaming</span>
+<span class="syn-kw">const</span> stream = <span class="syn-kw">await</span> client.chat.completions.<span class="syn-fn">create</span>({
+  model: <span class="syn-str">"opsora-fast"</span>,
+  messages: [{ role: <span class="syn-str">"user"</span>, content: <span class="syn-str">"Count to 10."</span> }],
+  stream: <span class="syn-kw">true</span>,
+});
+
+<span class="syn-kw">for await</span> (<span class="syn-kw">const</span> chunk <span class="syn-kw">of</span> stream) {
+  process.stdout.<span class="syn-fn">write</span>(chunk.choices[<span class="syn-num">0</span>]?.delta?.content || <span class="syn-str">""</span>);
+}</code></pre>
+  </div>
+
+  <!-- cURL -->
+  <h3>cURL</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>bash — chat completion</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code><span class="syn-cmt"># Standard request</span>
+curl https://api.opsora.ai/v1/chat/completions \
+  -H <span class="syn-str">"Content-Type: application/json"</span> \
+  -H <span class="syn-str">"Authorization: Bearer opsora-sk-xxxxx"</span> \
+  -d <span class="syn-str">'{
+    "model": "opsora-reason",
+    "messages": [
+      {"role": "user", "content": "Prove that sqrt(2) is irrational."}
+    ],
+    "max_tokens": 512
+  }'</span>
+
+<span class="syn-cmt"># List models</span>
+curl https://api.opsora.ai/v1/models \
+  -H <span class="syn-str">"Authorization: Bearer opsora-sk-xxxxx"</span>
+
+<span class="syn-cmt"># Health check (no auth required)</span>
+curl https://api.opsora.ai/health</code></pre>
+  </div>
+
+  <!-- Go -->
+  <h3>Go</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>go — chat completion</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code><span class="syn-kw">package</span> main
+
+<span class="syn-kw">import</span> (
+    <span class="syn-str">"context"</span>
+    <span class="syn-str">"fmt"</span>
+    openai <span class="syn-str">"github.com/sashabaranov/go-openai"</span>
+)
+
+<span class="syn-kw">func</span> <span class="syn-fn">main</span>() {
+    config := openai.<span class="syn-fn">DefaultConfig</span>(<span class="syn-str">"opsora-sk-xxxxx"</span>)
+    config.BaseURL = <span class="syn-str">"https://api.opsora.ai/v1"</span>
+
+    client := openai.<span class="syn-fn">NewClientWithConfig</span>(config)
+
+    resp, err := client.<span class="syn-fn">CreateChatCompletion</span>(
+        context.<span class="syn-fn">Background</span>(),
+        openai.ChatCompletionRequest{
+            Model: <span class="syn-str">"opsora-fast"</span>,
+            Messages: []openai.ChatCompletionMessage{
+                {Role: openai.ChatMessageRoleUser, Content: <span class="syn-str">"Hello!"</span>},
+            },
+        },
+    )
+    <span class="syn-kw">if</span> err != <span class="syn-kw">nil</span> {
+        panic(err)
+    }
+
+    fmt.<span class="syn-fn">Println</span>(resp.Choices[<span class="syn-num">0</span>].Message.Content)
+}</code></pre>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- RATE LIMITS -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="rate-limits">
+  <h2 class="doc-section-title"><span class="prefix">// </span>rate limits</h2>
+  <p class="doc-section-desc">Rate limits are applied per API key. Upgrade your tier to increase limits. Burst allows short spikes above the sustained rate.</p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Requests/min</th>
+          <th>Tokens/min</th>
+          <th>Burst</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-muted">Free</span></td>
+          <td>10</td>
+          <td>5,000</td>
+          <td>20</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-lime">Dev</span></td>
+          <td>60</td>
+          <td>50,000</td>
+          <td>120</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">Team</span></td>
+          <td>200</td>
+          <td>200,000</td>
+          <td>400</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-yellow">Enterprise</span></td>
+          <td>unlimited</td>
+          <td>unlimited</td>
+          <td>unlimited</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Rate Limit Headers</h3>
+  <p>Every response includes rate limit information in the headers:</p>
+
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <span>response headers</span>
+      <button class="code-copy-btn" onclick="copyCode(this)">copy</button>
+    </div>
+    <pre><code>X-RateLimit-Limit-Requests: 60
+X-RateLimit-Remaining-Requests: 54
+X-RateLimit-Reset-Requests: 2026-07-29T12:01:00Z
+X-RateLimit-Limit-Tokens: 50000
+X-RateLimit-Remaining-Tokens: 48231
+X-RateLimit-Reset-Tokens: 2026-07-29T12:01:00Z</code></pre>
+  </div>
+
+  <h3>Exceeding Limits</h3>
+  <div class="card">
+    <p style="margin-bottom: 0; font-size: 14px; color: var(--muted);">When you exceed the rate limit, you'll receive a <code>429</code> response with a <code>Retry-After</code> header indicating how many seconds to wait. Implement exponential backoff for production workloads.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ -->
+<!-- CHANGELOG -->
+<!-- ════════════════════════════════════════ -->
+<section class="doc-section" id="changelog">
+  <h2 class="doc-section-title"><span class="prefix">// </span>changelog</h2>
+  <p class="doc-section-desc">Release history and notable changes to the Opsora Agent API.</p>
+
+  <div class="card">
+    <div class="changelog-entry">
+      <span class="changelog-version">v1.0.0</span>
+      <span class="changelog-date">2026-07-29</span>
+      <div class="changelog-desc">
+        Initial launch — 6 models (opsora-fast, opsora-brain, opsora-code, opsora-vision, opsora-reason, opsora-max), automatic fallback routing, per-key usage tracking, interactive playground, OpenAI-compatible API surface, SSE streaming support.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<div style="border-top: 1px solid var(--border); padding-top: 32px; margin-top: 48px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div style="font-family: var(--mono); font-size: 13px; color: var(--muted);">
+      <a href="index.html" style="color: var(--muted); transition: color 0.15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">← back to landing</a>
+    </div>
+    <div style="font-family: var(--mono); font-size: 12px; color: var(--muted);">
+      opsora agent api · v1.0.0 · 2026
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ── BACK TO TOP ── -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
+
+<script>
+// ── TAB SYSTEM ──
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const group = btn.closest('.tabs').dataset.tabGroup || btn.parentElement.dataset.tabGroup;
+    const tab = btn.dataset.tab;
+
+    // Deactivate all buttons in this group
+    btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Find panels that follow this tab bar
+    let sibling = btn.closest('.tabs').nextElementSibling;
+    while (sibling && sibling.classList.contains('tab-panel')) {
+      if (sibling.dataset.tabGroup === group || !group) {
+        sibling.classList.toggle('active', sibling.dataset.tab === tab);
+      }
+      sibling = sibling.nextElementSibling;
+    }
+  });
+});
+
+// ── COPY BUTTON ──
+function copyCode(btn) {
+  const wrapper = btn.closest('.code-block-wrapper') || btn.closest('.code-block-header');
+  const pre = wrapper.querySelector('pre') || wrapper.nextElementSibling;
+  const code = pre.querySelector('code') || pre;
+
+  // Strip HTML tags to get plain text
+  const text = code.innerText || code.textContent;
+
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// ── SIDEBAR TOGGLE (MOBILE) ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Close sidebar on link click (mobile)
+document.querySelectorAll('.sidebar-nav a').forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 860) {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  });
+});
+
+// ── ACTIVE SECTION HIGHLIGHTING ──
+const sections = document.querySelectorAll('.doc-section');
+const navLinks = document.querySelectorAll('#sidebar-nav a');
+
+function updateActiveNav() {
+  let current = '';
+  const scrollY = window.scrollY + 120;
+
+  sections.forEach(section => {
+    const top = section.offsetTop;
+    const height = section.offsetHeight;
+    if (scrollY >= top && scrollY < top + height) {
+      current = section.getAttribute('id');
+    }
+  });
+
+  // If near bottom, highlight last section
+  if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 100) {
+    current = sections[sections.length - 1].getAttribute('id');
+  }
+
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+}
+
+// ── BACK TO TOP VISIBILITY ──
+const backToTop = document.getElementById('backToTop');
+
+function updateBackToTop() {
+  if (window.scrollY > 400) {
+    backToTop.classList.add('visible');
+  } else {
+    backToTop.classList.remove('visible');
+  }
+}
+
+// Throttled scroll handler
+let scrollTick = false;
+window.addEventListener('scroll', () => {
+  if (!scrollTick) {
+    requestAnimationFrame(() => {
+      updateActiveNav();
+      updateBackToTop();
+      scrollTick = false;
+    });
+    scrollTick = true;
+  }
+});
+
+// Initial call
+updateActiveNav();
+</script>
+
+</body>
+</html>

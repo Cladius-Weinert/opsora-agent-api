@@ -1,0 +1,34 @@
+{
+  "opsora-fast": {
+    "model": "deepseek-ai/deepseek-v4-flash",
+    "alias": "opsora-fast",
+    "response": "An API gateway is a server that acts as a single entry point for client requests, routing them to appropriate backend microservices while handling cross-cutting concerns such as authentication, rate limiting, and request transformation.",
+    "usage": {"prompt_tokens": 21, "completion_tokens": 109, "total_tokens": 130},
+    "latency_ms": 847,
+    "status": 200
+  },
+  "opsora-brain": {
+    "model": "meta/llama-3.1-70b-instruct",
+    "alias": "opsora-brain",
+    "response": "An API gateway is a single entry point for clients to access a collection of microservices, acting as a reverse proxy that routes incoming API requests to the appropriate backend service, handling tasks like authentication, rate limiting, and request transformation.",
+    "usage": {"prompt_tokens": 53, "completion_tokens": 92, "total_tokens": 145},
+    "latency_ms": 2340,
+    "status": 200
+  },
+  "opsora-vision": {
+    "model": "meta/llama-3.2-90b-vision-instruct",
+    "alias": "opsora-vision",
+    "response": "An API gateway is a single-entry point for clients to access a collection of microservices, acting as a reverse proxy that receives incoming API requests, routes them to the appropriate backend service.",
+    "usage": {"prompt_tokens": 53, "completion_tokens": 85, "total_tokens": 138},
+    "latency_ms": 3120,
+    "status": 200
+  },
+  "opsora-reason": {
+    "model": "deepseek-ai/deepseek-v4-pro",
+    "alias": "opsora-reason",
+    "response": "An API gateway is a reverse proxy that acts as the single entry point for client requests, handling cross-cutting concerns such as authentication, rate limiting, and request transformation before dynamically routing to backend microservices.",
+    "usage": {"prompt_tokens": 21, "completion_tokens": 67, "total_tokens": 88},
+    "latency_ms": 4560,
+    "status": 200
+  }
+}
