@@ -1,5 +1,18 @@
+# Environment variables (NEVER commit secrets)
 .env
+
+# Python
 __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Database
+*.db
+
+# Docker volumes (if mounted locally)
+data/
+
+# OS files
+.DS_Store
+Thumbs.db

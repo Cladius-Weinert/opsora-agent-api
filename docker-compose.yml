@@ -1,19 +1,115 @@
+# ==============================================================================
+# Opsora Agent API — Production Docker Compose
+# Services: API app, Nginx reverse proxy, Certbot (SSL auto-renewal)
+# ==============================================================================
+
 services:
+  # ------------------------------------------------------------------
+  # Opsora Agent API (FastAPI + Uvicorn)
+  # ------------------------------------------------------------------
   opsora-agent-api:
-    build: .
-    ports:
-      - "8080:8080"
+    image: ghcr.io/opsora-ai/opsora-agent-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opsora-agent-api
     env_file:
       - .env
     restart: unless-stopped
-    # Keep memory footprint low for cheap VPS
+    # Only expose to localhost — nginx handles external traffic
+    expose:
+      - "8080"
+    # Resource limits — keep footprint low for cheap VPS
     deploy:
       resources:
         limits:
           memory: 256M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; r = httpx.get('http://localhost:8080/health'); r.raise_for_status()"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    # Persistent volumes for data
+    volumes:
+      - app-data:/app/data
+    networks:
+      - opsora-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ------------------------------------------------------------------
+  # Nginx — Reverse proxy with SSL termination
+  # ------------------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: opsora-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/opsora-api.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-conf:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      opsora-agent-api:
+        condition: service_healthy
+    networks:
+      - opsora-net
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ------------------------------------------------------------------
+  # Certbot — Automatic SSL certificate issuance & renewal
+  # ------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot:latest
+    container_name: opsora-certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    # Auto-renewal check every 12 hours
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet && sleep 12h & wait $${!}; done"
+    networks:
+      - opsora-net
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+# ------------------------------------------------------------------
+# Networks
+# ------------------------------------------------------------------
+networks:
+  opsora-net:
+    driver: bridge
+
+# ------------------------------------------------------------------
+# Volumes
+# ------------------------------------------------------------------
+volumes:
+  app-data:
+    driver: local
+  certbot-conf:
+    driver: local
+  certbot-webroot:
+    driver: local
+  nginx-logs:
+    driver: local

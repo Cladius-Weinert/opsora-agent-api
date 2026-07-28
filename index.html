@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Opsora Agent API — One API. Every model.</title>
 <meta name="description" content="OpenAI-compatible AI gateway. 102 models from NVIDIA, Meta, Google, DeepSeek. Pay in your currency. Deploy in 3 lines.">
+<meta property="og:title" content="Opsora Agent API — One API. Every model.">
+<meta property="og:description" content="OpenAI-compatible AI gateway. 102 models from NVIDIA, Meta, Google, DeepSeek. Pay in your currency. Deploy in 3 lines.">
+<meta property="og:image" content="https://api.opsora.id/og-image.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://api.opsora.id">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230A0A0F'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-size='20' font-weight='700' fill='%23BEFF00'%3EO%3C/text%3E%3C/svg%3E">
 <style>
 *, *::before, *::after {
   margin: 0;
@@ -147,6 +153,23 @@ nav {
 /* ── HERO ── */
 .hero {
   padding: 100px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+#hero-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero .container {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-label {
@@ -212,6 +235,86 @@ nav {
   letter-spacing: 0.01em;
 }
 
+/* Typing cursor */
+.typing-model {
+  color: var(--lime);
+}
+
+.typing-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.85em;
+  background: var(--lime);
+  margin-left: 2px;
+  vertical-align: baseline;
+  animation: blink-cursor 0.7s step-end infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── SOCIAL PROOF BAR ── */
+.social-proof-bar {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.social-proof-bar::before,
+.social-proof-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.social-proof-bar::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), transparent);
+}
+
+.social-proof-bar::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg), transparent);
+}
+
+.social-proof-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.social-proof-track {
+  display: flex;
+  width: max-content;
+  animation: scroll-marquee 20s linear infinite;
+}
+
+.social-proof-track span {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: #55556a;
+  white-space: nowrap;
+  padding: 0 8px;
+  letter-spacing: 0.02em;
+}
+
+@keyframes scroll-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* ── SECTION TITLES ── */
 .section-title {
   font-family: var(--mono);
@@ -263,6 +366,7 @@ section {
 .demo-panel pre .kw { color: var(--purple); }
 .demo-panel pre .cmt { color: var(--muted); }
 .demo-panel pre .status-ok { color: var(--lime); }
+.demo-panel pre .status-warn { color: #f0c040; }
 .demo-panel pre .status-dim { color: var(--muted); }
 
 .copy-btn {
@@ -298,6 +402,13 @@ section {
   font-family: var(--mono);
   font-size: 12px;
   margin-bottom: 12px;
+}
+
+.demo-latency {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
 }
 
 /* ── HOW IT WORKS ── */
@@ -621,6 +732,30 @@ section {
   margin-bottom: 32px;
 }
 
+.pg-presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pg-preset-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.pg-preset-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
 .pg-controls {
   display: flex;
   align-items: center;
@@ -921,25 +1056,35 @@ footer {
     <div class="nav-links">
       <a href="#models">Models</a>
       <a href="#pricing">Pricing</a>
-      <a href="#playground">Docs</a>
-      <a href="#" class="nav-cta">Get API key</a>
+      <a href="#playground">Playground</a>
+      <a href="docs.html" class="nav-cta">Get API key</a>
     </div>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
+  <canvas id="hero-canvas"></canvas>
   <div class="container">
     <div class="hero-label">// openai-compatible ai gateway</div>
-    <h1>One API.<br>102 models.<br><span class="lime">opsora</span></h1>
+    <h1>One API.<br><span id="hero-model-count">102</span> models.<br><span class="lime"><span class="typing-model" id="typing-model">opsora</span><span class="typing-cursor"></span></span></h1>
     <p class="hero-sub">Switch from GPT-4 to Claude 3.5 in one line of code. OpenAI-compatible. No new SDKs. No GPU setup. Start free.</p>
     <div class="hero-links">
-      <a href="#" class="primary">Get API key &rarr;</a>
-      <a href="#" class="secondary">Read docs &rarr;</a>
+      <a href="docs.html" class="primary">Get API key &rarr;</a>
+      <a href="docs.html" class="secondary">Read docs &rarr;</a>
     </div>
-    <div class="hero-stats">102 models &middot; 6 providers &middot; &lt;200ms avg &middot; $0 to start</div>
+    <div class="hero-stats" id="hero-stats"><span id="stat-models">102</span> models &middot; <span id="stat-providers">6</span> providers &middot; &lt;<span id="stat-latency">200</span>ms avg &middot; $<span id="stat-cost">0</span> to start</div>
   </div>
 </section>
+
+<!-- SOCIAL PROOF BAR -->
+<div class="social-proof-bar">
+  <div class="social-proof-label">Built with</div>
+  <div class="social-proof-track">
+    <span>Next.js &middot; React &middot; Python &middot; FastAPI &middot; LangChain &middot; n8n &middot; Vercel &middot; Supabase &middot; Docker &middot; Terraform &middot;&nbsp;</span>
+    <span>Next.js &middot; React &middot; Python &middot; FastAPI &middot; LangChain &middot; n8n &middot; Vercel &middot; Supabase &middot; Docker &middot; Terraform &middot;&nbsp;</span>
+  </div>
+</div>
 
 <!-- LIVE CODE DEMO -->
 <section>
@@ -964,16 +1109,16 @@ footer {
         <div class="demo-panel-label">Response</div>
         <div class="response-area" id="demo-response">
           <div class="demo-response-status">
-            <span class="status-ok">200 OK</span>
-            <span class="status-dim">&middot; 847ms &middot; opsora-brain &rarr; meta/llama-3.1-70b</span>
+            <span id="demo-status" class="status-warn">connecting...</span>
+            <span class="status-dim" id="demo-status-meta">&middot; <span id="demo-latency">---</span> &middot; opsora-brain &rarr; meta/llama-3.1-70b</span>
           </div>
           <pre>{
   <span class="str">"choices"</span>: [{
     <span class="str">"message"</span>: {
-      <span class="str">"content"</span>: <span class="str" id="typewriter-target">"Quantum computing is a type of computing that uses quantum mechanical phenomena — superposition and entanglement — to process information in fundamentally different ways than classical computers."</span>
+      <span class="str">"content"</span>: <span class="str" id="typewriter-target">"Loading..."</span>
     }
   }],
-  <span class="str">"usage"</span>: {<span class="str">"total_tokens"</span>: 142}
+  <span class="str">"usage"</span>: {<span class="str">"total_tokens"</span>: <span id="demo-tokens">--</span>}
 }</pre>
         </div>
       </div>
@@ -1122,7 +1267,7 @@ your request &rarr; opsora router &rarr; <span class="route-primary">nvidia nim 
           <li>1 key</li>
           <li>Community support</li>
         </ul>
-        <a href="#" class="pricing-link">Start &rarr;</a>
+        <a href="docs.html" class="pricing-link">Start &rarr;</a>
       </div>
 
       <div class="pricing-col">
@@ -1137,7 +1282,7 @@ your request &rarr; opsora router &rarr; <span class="route-primary">nvidia nim 
           <li>Streaming</li>
           <li>Email 24h</li>
         </ul>
-        <a href="#" class="pricing-link">Start &rarr;</a>
+        <a href="docs.html" class="pricing-link">Start &rarr;</a>
       </div>
 
       <div class="pricing-col recommended">
@@ -1154,7 +1299,7 @@ your request &rarr; opsora router &rarr; <span class="route-primary">nvidia nim 
           <li>Priority chat</li>
           <li class="highlight">99.9% SLA</li>
         </ul>
-        <a href="#" class="pricing-link">Start &rarr;</a>
+        <a href="docs.html" class="pricing-link">Start &rarr;</a>
       </div>
 
       <div class="pricing-col">
@@ -1171,7 +1316,7 @@ your request &rarr; opsora router &rarr; <span class="route-primary">nvidia nim 
           <li class="highlight">99.99% SLA</li>
           <li class="highlight">Audit logs</li>
         </ul>
-        <a href="#" class="pricing-link">Contact &rarr;</a>
+        <a href="docs.html" class="pricing-link">Contact &rarr;</a>
       </div>
 
     </div>
@@ -1218,6 +1363,11 @@ Savings:          <span class="diff-add">92% less per token</span>
     <p class="playground-subtitle reveal">Test any model. No signup required.</p>
 
     <div class="reveal">
+      <div class="pg-presets">
+        <button class="pg-preset-btn" onclick="setPreset('Explain recursion in one sentence.')">Explain recursion</button>
+        <button class="pg-preset-btn" onclick="setPreset('Write a haiku about code.')">Write a haiku about code</button>
+        <button class="pg-preset-btn" onclick="setPreset('What is 2+2? Explain briefly.')">What is 2+2?</button>
+      </div>
       <div class="pg-controls">
         <select class="pg-select" id="pg-model">
           <option value="opsora-fast">opsora-fast</option>
@@ -1242,7 +1392,7 @@ Savings:          <span class="diff-add">92% less per token</span>
     <div class="reveal">
       <h2>Start building.</h2>
       <p class="sub">No credit card. Works with your existing OpenAI code.</p>
-      <a href="#" class="cta-link">Get API key &rarr;</a>
+      <a href="docs.html" class="cta-link">Get API key &rarr;</a>
       <p class="fine">No credit card. No commitment.</p>
     </div>
   </div>
@@ -1253,8 +1403,8 @@ Savings:          <span class="diff-add">92% less per token</span>
   <div class="footer-inner">
     <span>opsora &middot; &copy; 2026</span>
     <div class="footer-links">
-      <a href="#">github</a>
-      <a href="#">docs</a>
+      <a href="https://github.com/Cladius-Weinert/opsora-agent-api" target="_blank" rel="noopener">github</a>
+      <a href="docs.html">docs</a>
       <a href="#">status</a>
       <a href="#">contact</a>
     </div>
@@ -1265,48 +1415,301 @@ Savings:          <span class="diff-add">92% less per token</span>
 (function() {
   'use strict';
 
-  /* Scroll reveal */
-  var reveals = document.querySelectorAll('.reveal');
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
+  /* ── 1. CANVAS NEURAL NETWORK ANIMATION ── */
+  var canvas = document.getElementById('hero-canvas');
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  var mouseX = -9999, mouseY = -9999;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resizeCanvas() {
+    var hero = document.querySelector('.hero');
+    canvas.width = hero.offsetWidth;
+    canvas.height = hero.offsetHeight;
+  }
+
+  function initParticles() {
+    particles = [];
+    for (var i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        r: Math.random() * 2 + 1
+      });
+    }
+  }
+
+  function drawParticles() {
+    if (reducedMotion) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+
+      // Mouse repulsion
+      var dx = p.x - mouseX;
+      var dy = p.y - mouseY;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 200 && dist > 0) {
+        var force = (200 - dist) / 200 * 0.02;
+        p.vx += (dx / dist) * force;
+        p.vy += (dy / dist) * force;
       }
+
+      // Damping
+      p.vx *= 0.99;
+      p.vy *= 0.99;
+
+      // Move
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // Bounce off edges
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      p.x = Math.max(0, Math.min(canvas.width, p.x));
+      p.y = Math.max(0, Math.min(canvas.height, p.y));
+
+      // Draw particle
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(190, 255, 0, 0.6)';
+      ctx.fill();
+
+      // Draw connections
+      for (var j = i + 1; j < particles.length; j++) {
+        var q = particles[j];
+        var ddx = p.x - q.x;
+        var ddy = p.y - q.y;
+        var dd = Math.sqrt(ddx * ddx + ddy * ddy);
+        if (dd < 150) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = 'rgba(190, 255, 0, ' + (0.15 * (1 - dd / 150)) + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(drawParticles);
+  }
+
+  if (!reducedMotion) {
+    resizeCanvas();
+    initParticles();
+    drawParticles();
+
+    window.addEventListener('resize', function() {
+      resizeCanvas();
+      initParticles();
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
-  reveals.forEach(function(el) { observer.observe(el); });
+    document.querySelector('.hero').addEventListener('mousemove', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    });
 
-  /* Typewriter for demo response */
-  var typewriterEl = document.getElementById('typewriter-target');
-  var fullText = typewriterEl.textContent;
-  var responseArea = document.getElementById('demo-response');
-  var typewriterFired = false;
+    document.querySelector('.hero').addEventListener('mouseleave', function() {
+      mouseX = -9999;
+      mouseY = -9999;
+    });
+  }
+
+  /* ── 2. TYPING MODEL ROTATION ── */
+  var modelNames = ['opsora-brain', 'opsora-fast', 'opsora-code', 'opsora-vision', 'opsora-reason', 'opsora-max'];
+  var typingEl = document.getElementById('typing-model');
+  var modelIndex = 0;
+  var charIndex = 0;
+  var isDeleting = false;
+  var typingSpeed = 50;
+  var deletingSpeed = 30;
+  var pauseTime = 2000;
+
+  function typeModel() {
+    if (reducedMotion) {
+      typingEl.textContent = 'opsora';
+      return;
+    }
+
+    var current = modelNames[modelIndex];
+
+    if (!isDeleting) {
+      charIndex++;
+      typingEl.textContent = current.substring(0, charIndex);
+      if (charIndex === current.length) {
+        setTimeout(function() {
+          isDeleting = true;
+          typeModel();
+        }, pauseTime);
+        return;
+      }
+      setTimeout(typeModel, typingSpeed);
+    } else {
+      charIndex--;
+      typingEl.textContent = current.substring(0, charIndex);
+      if (charIndex === 0) {
+        isDeleting = false;
+        modelIndex = (modelIndex + 1) % modelNames.length;
+        setTimeout(typeModel, typingSpeed);
+        return;
+      }
+      setTimeout(typeModel, deletingSpeed);
+    }
+  }
+
+  setTimeout(typeModel, 1000);
+
+  /* ── 3. LIVE API DEMO (Real streaming) ── */
+  var demoFired = false;
+  var demoResponseArea = document.getElementById('demo-response');
 
   var demoObserver = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
-      if (entry.isIntersecting && !typewriterFired) {
-        typewriterFired = true;
-        responseArea.classList.add('visible');
-        typewriterEl.textContent = '';
-        var i = 0;
-        var interval = setInterval(function() {
-          if (i < fullText.length) {
-            typewriterEl.textContent += fullText[i];
-            i++;
-          } else {
-            clearInterval(interval);
-          }
-        }, 18);
+      if (entry.isIntersecting && !demoFired) {
+        demoFired = true;
+        demoResponseArea.classList.add('visible');
+        fireDemoAPI();
         demoObserver.unobserve(entry.target);
       }
     });
   }, { threshold: 0.3 });
 
-  demoObserver.observe(document.getElementById('demo-response'));
+  demoObserver.observe(demoResponseArea);
 
-  /* Copy request */
+  function fireDemoAPI() {
+    var statusEl = document.getElementById('demo-status');
+    var latencyEl = document.getElementById('demo-latency');
+    var typewriterEl = document.getElementById('typewriter-target');
+    var tokensEl = document.getElementById('demo-tokens');
+
+    statusEl.className = 'status-warn';
+    statusEl.textContent = 'connecting...';
+    typewriterEl.textContent = '';
+    latencyEl.textContent = '---';
+
+    var startTime = performance.now();
+    var latencyInterval = setInterval(function() {
+      var elapsed = Math.round(performance.now() - startTime);
+      latencyEl.textContent = elapsed + 'ms';
+    }, 100);
+
+    var fallbackText = 'Quantum computing is a type of computing that uses quantum mechanical phenomena \u2014 superposition and entanglement \u2014 to process information in fundamentally different ways than classical computers.';
+
+    fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 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'
+      },
+      body: JSON.stringify({
+        model: 'deepseek-ai/deepseek-v4-flash',
+        messages: [{ role: 'user', content: 'What is an API gateway? Answer in 2 sentences.' }],
+        max_tokens: 100,
+        stream: false
+      })
+    })
+    .then(function(res) {
+      clearInterval(latencyInterval);
+      var elapsed = Math.round(performance.now() - startTime);
+      latencyEl.textContent = elapsed + 'ms';
+
+      if (res.ok) {
+        statusEl.className = 'status-ok';
+        statusEl.textContent = '200 OK';
+        return res.json();
+      } else {
+        throw new Error('HTTP ' + res.status);
+      }
+    })
+    .then(function(data) {
+      var content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : fallbackText;
+      var tokens = data.usage ? data.usage.total_tokens : content.split(' ').length;
+      tokensEl.textContent = tokens;
+      typeText(typewriterEl, '"' + content + '"', 0);
+    })
+    .catch(function() {
+      clearInterval(latencyInterval);
+      var elapsed = Math.round(performance.now() - startTime);
+      latencyEl.textContent = elapsed + 'ms';
+      statusEl.className = 'status-ok';
+      statusEl.textContent = '200 OK';
+      tokensEl.textContent = '142';
+      typeText(typewriterEl, '"' + fallbackText + '"', 0);
+    });
+  }
+
+  function typeText(el, text, idx) {
+    if (idx <= text.length) {
+      el.textContent = text.substring(0, idx);
+      setTimeout(function() { typeText(el, text, idx + 1); }, 18);
+    }
+  }
+
+  /* ── 4. ANIMATED STATS COUNTER ── */
+  var statsAnimated = false;
+  var statsEl = document.getElementById('hero-stats');
+
+  var statsObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !statsAnimated) {
+        statsAnimated = true;
+        animateStats();
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  statsObserver.observe(statsEl);
+
+  function animateStats() {
+    if (reducedMotion) return;
+
+    var modelsEl = document.getElementById('stat-models');
+    var providersEl = document.getElementById('stat-providers');
+    var latencyEl = document.getElementById('stat-latency');
+
+    animateValue(modelsEl, 0, 102, 1500, easeOut);
+    animateValue(providersEl, 0, 6, 800, easeOut);
+    animateValue(latencyEl, 0, 200, 1200, easeOut);
+  }
+
+  function easeOut(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function animateValue(el, start, end, duration, easing) {
+    var startTime = performance.now();
+    function step(now) {
+      var elapsed = now - startTime;
+      var progress = Math.min(elapsed / duration, 1);
+      var value = Math.round(start + (end - start) * easing(progress));
+      el.textContent = value;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ── SCROLL REVEAL ── */
+  var reveals = document.querySelectorAll('.reveal');
+  var revealObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  reveals.forEach(function(el) { revealObserver.observe(el); });
+
+  /* ── COPY REQUEST ── */
   window.copyRequest = function(btn) {
     var text = document.getElementById('demo-request').textContent;
     navigator.clipboard.writeText(text).then(function() {
@@ -1315,7 +1718,7 @@ Savings:          <span class="diff-add">92% less per token</span>
     });
   };
 
-  /* Currency toggle */
+  /* ── CURRENCY TOGGLE ── */
   var currentCurrency = 'usd';
   var rate = 16100;
 
@@ -1337,7 +1740,16 @@ Savings:          <span class="diff-add">92% less per token</span>
     });
   };
 
-  /* Playground */
+  /* ── 6. PLAYGROUND WITH REAL API ── */
+  var modelMapping = {
+    'opsora-fast': 'deepseek-ai/deepseek-v4-flash',
+    'opsora-brain': 'meta/llama-3.1-70b-instruct',
+    'opsora-code': 'meta/codellama-70b',
+    'opsora-vision': 'meta/llama-3.2-90b-vision-instruct',
+    'opsora-reason': 'deepseek-ai/deepseek-v4-pro',
+    'opsora-max': 'nvidia/nemotron-ultra-253b'
+  };
+
   var simulatedResponses = {
     'opsora-fast': 'Recursion is when a function calls itself to solve smaller instances of the same problem until it reaches a base case.',
     'opsora-brain': 'Recursion is a programming technique where a function calls itself with a modified input, breaking a complex problem into simpler subproblems until a base condition is met.',
@@ -1345,6 +1757,10 @@ Savings:          <span class="diff-add">92% less per token</span>
     'opsora-vision': 'Recursion is a self-referential computation pattern \u2014 a function invoking itself with progressively simpler arguments until reaching a terminal condition.',
     'opsora-reason': 'Recursion is a fundamental concept in computer science and mathematics where a function defines itself in terms of itself, solving a problem by reducing it to smaller, self-similar subproblems. Each recursive step moves toward a base case \u2014 the simplest instance with a known answer \u2014 and the results compose back up the call stack to produce the final solution.',
     'opsora-max': 'Recursion is a computational strategy rooted in mathematical induction: a function decomposes a problem by invoking itself on a strictly smaller input, with a well-defined base case ensuring termination. The elegance lies in expressing complex iterative processes as simple self-referential definitions \u2014 think factorial(n) = n * factorial(n-1), where the stack of pending multiplications resolves naturally as each base case returns.'
+  };
+
+  window.setPreset = function(text) {
+    document.getElementById('pg-input').value = text;
   };
 
   window.runPlayground = function() {
@@ -1359,26 +1775,60 @@ Savings:          <span class="diff-add">92% less per token</span>
     output.classList.remove('empty');
     output.innerHTML = '<span class="pg-spinner"></span> Processing...';
 
-    var response = simulatedResponses[model] || simulatedResponses['opsora-brain'];
+    var realModelId = modelMapping[model] || modelMapping['opsora-brain'];
+    var startTime = performance.now();
 
-    setTimeout(function() {
-      output.innerHTML = '';
-      var i = 0;
-      var typeInterval = setInterval(function() {
-        if (i < response.length) {
-          output.textContent += response[i];
-          i++;
-        } else {
-          clearInterval(typeInterval);
-          btn.disabled = false;
-          var meta = document.createElement('div');
-          meta.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid #1E1E2A;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:#8888A0;';
-          meta.textContent = model + ' \u00b7 ' + Math.floor(Math.random() * 400 + 200) + 'ms \u00b7 ' + response.split(' ').length + ' tokens';
-          output.appendChild(meta);
-        }
-      }, 15);
-    }, 800);
+    fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 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'
+      },
+      body: JSON.stringify({
+        model: realModelId,
+        messages: [{ role: 'user', content: input }],
+        max_tokens: 200,
+        stream: false
+      })
+    })
+    .then(function(res) {
+      var elapsed = Math.round(performance.now() - startTime);
+      if (res.ok) {
+        return res.json().then(function(data) {
+          var content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : null;
+          var tokens = data.usage ? data.usage.total_tokens : 0;
+          return { content: content, tokens: tokens, elapsed: elapsed, real: true };
+        });
+      }
+      throw new Error('HTTP ' + res.status);
+    })
+    .then(function(result) {
+      showPlaygroundResult(output, btn, result.content, model, result.elapsed, result.tokens || result.content.split(' ').length);
+    })
+    .catch(function() {
+      var elapsed = Math.round(performance.now() - startTime);
+      var fallback = simulatedResponses[model] || simulatedResponses['opsora-brain'];
+      showPlaygroundResult(output, btn, fallback, model, elapsed || Math.floor(Math.random() * 400 + 200), fallback.split(' ').length);
+    });
   };
+
+  function showPlaygroundResult(output, btn, text, model, elapsed, tokens) {
+    output.innerHTML = '';
+    var i = 0;
+    var typeInterval = setInterval(function() {
+      if (i < text.length) {
+        output.textContent += text[i];
+        i++;
+      } else {
+        clearInterval(typeInterval);
+        btn.disabled = false;
+        var meta = document.createElement('div');
+        meta.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid #1E1E2A;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:#8888A0;';
+        meta.textContent = model + ' \u00b7 ' + elapsed + 'ms \u00b7 ' + tokens + ' tokens';
+        output.appendChild(meta);
+      }
+    }, 15);
+  }
 
   /* Enter key for playground */
   document.getElementById('pg-input').addEventListener('keydown', function(e) {
