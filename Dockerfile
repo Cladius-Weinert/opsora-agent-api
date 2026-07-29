@@ -20,6 +20,9 @@ COPY agent_router.py ./
 COPY billing.py ./
 COPY config.py ./
 COPY main.py ./
+COPY tools.py ./
+COPY agent_loop.py ./
+COPY mongo_store.py ./
 
 # Copy static assets (landing page + docs served by nginx, but available in container)
 COPY index.html docs.html ./

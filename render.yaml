@@ -1,0 +1,73 @@
+# ==============================================================================
+# Opsora Agent API — Render Blueprint
+# Deploys: Web Service + PostgreSQL + Redis
+# Region: Singapore (closest to Indonesia target market)
+# ==============================================================================
+
+services:
+  # --- Main API Server ---
+  - type: web
+    name: opsora-agent-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: LOG_LEVEL
+        value: "info"
+      - key: CORS_ORIGINS
+        value: "https://opsora.id,https://cladius-weinert.github.io,https://dashboard.opsora.id"
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: DASHSCOPE_API_KEY
+        sync: false
+      - key: OPSORA_API_KEYS
+        generateValue: true
+      - key: DB_PATH
+        value: "/app/data/opsora_usage.db"
+      - key: BILLING_DB_PATH
+        value: "/app/data/billing.db"
+      - key: AGENT_WORKSPACE
+        value: "/app/workspace"
+    disk:
+      name: opsora-data
+      mountPath: /app/data
+      sizeGB: 1
+
+  # --- Dashboard (Next.js) ---
+  - type: web
+    name: opsora-dashboard
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: dashboard
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: "production"
+      - key: NEXT_PUBLIC_OPSORA_API_URL
+        fromService:
+          name: opsora-agent-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  # --- PostgreSQL (billing + usage analytics) ---
+  - name: opsora-db
+    databaseName: opsora
+    plan: free
+    region: singapore
+
+  # --- Redis (rate limiting + config cache) ---
+  - name: opsora-redis
+    plan: free
+    region: singapore
