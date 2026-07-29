@@ -11,6 +11,8 @@ kill_timeout = "5s"
   HOST = "0.0.0.0"
   LOG_LEVEL = "info"
   CORS_ORIGINS = "https://opsora.id,https://cladius-weinert.github.io,https://dashboard.opsora.id"
+  DB_PATH = "/app/data/opsora_usage.db"
+  BILLING_DB_PATH = "/app/data/billing.db"
 
 [http_service]
   internal_port = 8080
@@ -18,6 +20,10 @@ kill_timeout = "5s"
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
+
+[mounts]
+  source = "opsora_data"
+  destination = "/app/data"
 
 [[vm]]
   size = "shared-cpu-1x"
