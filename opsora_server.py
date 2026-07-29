@@ -14,6 +14,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+from agent_router import route_agent_request, route_agent_streaming
+from billing import BillingEngine
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
@@ -33,6 +36,9 @@ DB_PATH = os.getenv("DB_PATH", "opsora_usage.db")
 MAX_RETRIES = 2
 RETRY_STATUS_CODES = {502, 503}
 RETRY_BASE_DELAY = 0.5  # seconds, exponential: 0.5, 1.0
+
+# Billing engine (initialized at startup)
+_billing = None
 
 # ---------------------------------------------------------------------------
 # Model Configuration — Primary + Fallback Chain
@@ -92,6 +98,15 @@ MODEL_CONFIG = {
         "description": "Our most powerful model for maximum quality",
         "input_price": 80,
         "output_price": 180,
+    },
+    "opsora-agent": {
+        "primary": ("agent_router", "opsora-agent"),
+        "fallbacks": [],
+        "label": "Opsora Agent",
+        "speed": "variable",
+        "description": "AI-powered router — automatically picks the best model for your request",
+        "input_price": 40,
+        "output_price": 90,
     },
 }
 
@@ -620,6 +635,22 @@ class OpsoraHandler(BaseHTTPRequestHandler):
             )
             self._send_json(stats)
 
+        elif self.path == "/v1/billing":
+            token = self._authenticate()
+            if token is None:
+                return
+            if _billing:
+                summary = _billing.get_usage_summary(token)
+                self._send_json(summary)
+            else:
+                self._send_json({"error": "Billing not configured"}, 503)
+
+        elif self.path == "/v1/billing/pricing":
+            if _billing:
+                self._send_json(_billing.get_pricing_table())
+            else:
+                self._send_json({"error": "Billing not configured"}, 503)
+
         else:
             self._send_json(
                 _format_error("Not found.", "invalid_request_error", 404), 404
@@ -668,8 +699,81 @@ class OpsoraHandler(BaseHTTPRequestHandler):
         body.pop("user", None)
         wants_stream = body.get("stream", False) is True
 
+        # --- Billing quota check ---
+        if _billing:
+            allowed, billing_info = _billing.check_quota(token, model_alias)
+            if not allowed:
+                self._send_json(
+                    _format_error(
+                        billing_info.get("reason", "Quota exceeded") +
+                        ". " + billing_info.get("upgrade_hint", ""),
+                        "quota_exceeded", 429,
+                    ), 429
+                )
+                return
+
         logger.info("→ POST %s model=%s stream=%s", self.path, model_alias, wants_stream)
         t0 = time.time()
+
+        # --- Agent Router: opsora-agent ---
+        if model_alias == "opsora-agent":
+            if wants_stream:
+                resp, status, provider, real_model, err = route_agent_streaming(
+                    body.get("messages", []), body, _route_with_fallback_streaming
+                )
+                if status != 200 or resp is None:
+                    error_body = err or _format_error("Agent routing failed.", "upstream_error", status)
+                    self._send_json(error_body, status)
+                    return
+                # Stream the response
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Connection", "keep-alive")
+                self.send_header("X-Powered-By", "Opsora Agent API")
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.flush()
+                try:
+                    while True:
+                        raw = resp.read(4096)
+                        if not raw:
+                            break
+                        self.wfile.write(raw)
+                        self.wfile.flush()
+                except Exception:
+                    pass
+                self._send_sse_done()
+                try:
+                    resp.close()
+                except Exception:
+                    pass
+            else:
+                messages = body.get("messages", [])
+                result, status, provider, real_model = route_agent_request(
+                    messages, body, _route_with_fallback
+                )
+                if status == 200 and isinstance(result, dict):
+                    # Record billing
+                    if _billing:
+                        usage = result.get("usage", {})
+                        _billing.record_usage(
+                            token, model_alias,
+                            usage.get("prompt_tokens", 0),
+                            usage.get("completion_tokens", 0),
+                        )
+                self._send_json(result, status)
+
+            _log_usage({
+                "api_key": token[:8] + "..." if len(token) > 8 else token,
+                "model": model_alias,
+                "real_model": "opsora-agent",
+                "provider": "agent_router",
+                "status": status,
+                "latency_ms": (time.time() - t0) * 1000,
+                "ip": self.client_address[0],
+            })
+            return
 
         if wants_stream:
             self._handle_streaming(body, token, model_alias, endpoint, t0)
@@ -704,6 +808,10 @@ class OpsoraHandler(BaseHTTPRequestHandler):
             "status": status,
             "ip": self.client_address[0],
         })
+
+        # Record billing
+        if _billing and status == 200:
+            _billing.record_usage(token, model_alias, input_tok, output_tok)
 
         # Wrap non-200 errors into OpenAI-compatible format if not already
         if status != 200 and isinstance(result, dict) and "error" not in result:
@@ -849,6 +957,14 @@ class OpsoraHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     _init_db()
+
+    # Initialize billing engine
+    try:
+        _billing = BillingEngine(db_path=os.getenv("BILLING_DB_PATH", "billing.db"))
+        logger.info("   Billing: enabled (DB: billing.db)")
+    except Exception as e:
+        logger.warning("   Billing: disabled (%s)", e)
+
     server = HTTPServer(("0.0.0.0", PORT), OpsoraHandler)
     logger.info("🚀 Opsora Agent API running on port %s", PORT)
     logger.info("   Models: %s", ", ".join(MODEL_CONFIG.keys()))

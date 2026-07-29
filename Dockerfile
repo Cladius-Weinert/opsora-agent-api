@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir python-dotenv==1.1.0
 
 # Copy application code
 COPY opsora_server.py ./
+COPY agent_router.py ./
+COPY billing.py ./
 COPY config.py ./
 COPY main.py ./
 
