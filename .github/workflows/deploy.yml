@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     concurrency: deploy-group
+    if: ${{ vars.FLY_DEPLOY_ENABLED == 'true' }}
 
     steps:
       - name: Checkout code
