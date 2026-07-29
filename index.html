@@ -7,7 +7,7 @@
 <meta name="description" content="OpenAI-compatible AI gateway. 102 models from NVIDIA, Meta, Google, DeepSeek. Pay in your currency. Deploy in 3 lines.">
 <meta property="og:title" content="Opsora Agent API — One API. Every model.">
 <meta property="og:description" content="OpenAI-compatible AI gateway. 102 models from NVIDIA, Meta, Google, DeepSeek. Pay in your currency. Deploy in 3 lines.">
-<meta property="og:image" content="https://api.opsora.id/og-image.png">
+<meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' fill='%230A0A0F'%3E%3Crect width='1200' height='630'/%3E%3Ctext x='50%25' y='45%25' font-family='system-ui' font-size='72' font-weight='700' fill='%23BEFF00' text-anchor='middle'%3EOpsora%3C/text%3E%3Ctext x='50%25' y='62%25' font-family='system-ui' font-size='28' fill='%23763AFF' text-anchor='middle'%3EOne API. Every AI Model. 200ms.%3C/text%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://api.opsora.id">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230A0A0F'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-size='20' font-weight='700' fill='%23BEFF00'%3EO%3C/text%3E%3C/svg%3E">
@@ -1600,14 +1600,13 @@ Savings:          <span class="diff-add">92% less per token</span>
 
     var fallbackText = 'Quantum computing is a type of computing that uses quantum mechanical phenomena \u2014 superposition and entanglement \u2014 to process information in fundamentally different ways than classical computers.';
 
-    fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+    fetch('/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer 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'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'deepseek-ai/deepseek-v4-flash',
+        model: 'opsora-fast',
         messages: [{ role: 'user', content: 'What is an API gateway? Answer in 2 sentences.' }],
         max_tokens: 100,
         stream: false
@@ -1741,15 +1740,6 @@ Savings:          <span class="diff-add">92% less per token</span>
   };
 
   /* ── 6. PLAYGROUND WITH REAL API ── */
-  var modelMapping = {
-    'opsora-fast': 'deepseek-ai/deepseek-v4-flash',
-    'opsora-brain': 'meta/llama-3.1-70b-instruct',
-    'opsora-code': 'meta/codellama-70b',
-    'opsora-vision': 'meta/llama-3.2-90b-vision-instruct',
-    'opsora-reason': 'deepseek-ai/deepseek-v4-pro',
-    'opsora-max': 'nvidia/nemotron-ultra-253b'
-  };
-
   var simulatedResponses = {
     'opsora-fast': 'Recursion is when a function calls itself to solve smaller instances of the same problem until it reaches a base case.',
     'opsora-brain': 'Recursion is a programming technique where a function calls itself with a modified input, breaking a complex problem into simpler subproblems until a base condition is met.',
@@ -1775,17 +1765,15 @@ Savings:          <span class="diff-add">92% less per token</span>
     output.classList.remove('empty');
     output.innerHTML = '<span class="pg-spinner"></span> Processing...';
 
-    var realModelId = modelMapping[model] || modelMapping['opsora-brain'];
     var startTime = performance.now();
 
-    fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+    fetch('/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer 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'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: realModelId,
+        model: model,
         messages: [{ role: 'user', content: input }],
         max_tokens: 200,
         stream: false

@@ -402,6 +402,10 @@ def _call_provider_streaming(provider_name, endpoint, body, timeout=120):
 
     try:
         resp = urlopen(req, timeout=timeout)
+        # Enable incremental reads on POST responses.
+        # By default, urlopen sets _method=None for POST, causing read(amt)
+        # to buffer the entire body. Setting _method makes it respect amt.
+        resp._method = "POST"
         return resp, resp.status, None
     except HTTPError as e:
         try:
@@ -518,6 +522,8 @@ CORS_HEADERS = {
 
 
 class OpsoraHandler(BaseHTTPRequestHandler):
+    # Use HTTP/1.1 for proper streaming support (chunked transfer encoding)
+    protocol_version = "HTTP/1.1"
     # Increase timeout for streaming
     timeout = 180
 
@@ -553,23 +559,27 @@ class OpsoraHandler(BaseHTTPRequestHandler):
         self.send_header("X-Powered-By", "Opsora Agent API")
         self._send_cors_headers()
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(body)
 
     def _send_sse_chunk(self, chunk_data):
-        """Write a single SSE data line."""
+        """Write a single SSE data line and flush immediately."""
         line = f"data: {json.dumps(chunk_data, ensure_ascii=False)}\n\n"
         self.wfile.write(line.encode())
+        self.wfile.flush()
 
     def _send_sse_done(self):
-        """Write the SSE termination signal."""
+        """Write the SSE termination signal and flush."""
         self.wfile.write(b"data: [DONE]\n\n")
+        self.wfile.flush()
 
     def do_OPTIONS(self):
         """Handle CORS preflight."""
         self.send_response(200)
         self._send_cors_headers()
         self.send_header("Content-Length", "0")
+        self.send_header("Connection", "close")
         self.end_headers()
 
     # --- GET Routes ---
@@ -735,6 +745,7 @@ class OpsoraHandler(BaseHTTPRequestHandler):
         self.send_header("X-Powered-By", "Opsora Agent API")
         self._send_cors_headers()
         self.end_headers()
+        self.wfile.flush()  # send headers immediately so client knows stream started
 
         # Generate a completion ID for this stream
         completion_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"

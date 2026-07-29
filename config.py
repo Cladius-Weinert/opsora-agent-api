@@ -18,12 +18,12 @@ OPSORA_API_KEYS = [
 
 # Custom model name -> NVIDIA NIM model id
 MODEL_MAP: dict[str, str] = {
-    "opsora-brain": "meta/llama-3.1-70b-instruct",
     "opsora-fast": "deepseek-ai/deepseek-v4-flash",
-    "opsora-code": "meta/llama-3.1-70b-instruct",
-    "opsora-vision": "google/gemma-4-31b-it",
+    "opsora-brain": "meta/llama-3.1-70b-instruct",
+    "opsora-code": "nvidia/llama-3.3-nemotron-super-49b-v1",
+    "opsora-vision": "meta/llama-3.2-90b-vision-instruct",
     "opsora-reason": "deepseek-ai/deepseek-v4-pro",
-    "opsora-max": "nvidia/llama-3.1-nemotron-ultra-253b",
+    "opsora-max": "nvidia/nemotron-3-ultra-550b-a55b",
 }
 
 # Rate limiting (requests per minute per API key)
