@@ -651,6 +651,16 @@ class OpsoraHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({"error": "Billing not configured"}, 503)
 
+        elif self.path == "/v1/agent/tools":
+            if self._authenticate() is None:
+                return
+            from tools import get_tool_schemas
+            self._send_json({
+                "object": "list",
+                "data": get_tool_schemas(),
+                "count": len(get_tool_schemas()),
+            })
+
         else:
             self._send_json(
                 _format_error("Not found.", "invalid_request_error", 404), 404
@@ -672,6 +682,10 @@ class OpsoraHandler(BaseHTTPRequestHandler):
 
         if self.path in ("/v1/chat/completions", "/v1/completions"):
             self._handle_completions(body, token)
+        elif self.path == "/v1/agent/run":
+            self._handle_agent_run(body, token)
+        elif self.path == "/v1/agent/tools/execute":
+            self._handle_tool_execute(body, token)
         else:
             self._send_json(
                 _format_error("Not found.", "invalid_request_error", 404), 404
@@ -950,6 +964,155 @@ class OpsoraHandler(BaseHTTPRequestHandler):
         except Exception:
             pass
 
+    # --- Agent Loop Endpoints ---
+
+    def _handle_agent_run(self, body, token):
+        """Run the ReAct agent loop.
+
+        POST /v1/agent/run
+        Body: {messages: [...], workspace?: str, model?: str, max_iterations?: int, stream?: bool}
+        Returns: {content: str, metadata: {...}, status: int}
+        """
+        from agent_loop import AgentLoop
+
+        messages = body.get("messages", [])
+        if not messages:
+            self._send_json(
+                _format_error("'messages' field is required and must be non-empty.", "invalid_request_error", 400), 400
+            )
+            return
+
+        workspace = body.get("workspace", os.getenv("AGENT_WORKSPACE", "/app/workspace"))
+        model = body.get("model", "opsora-agent")
+        max_iter = body.get("max_iterations", 10)
+        wants_stream = body.get("stream", False) is True
+
+        # Billing check
+        if _billing:
+            allowed, billing_info = _billing.check_quota(token, model)
+            if not allowed:
+                self._send_json(
+                    _format_error(
+                        billing_info.get("reason", "Quota exceeded") +
+                        ". " + billing_info.get("upgrade_hint", ""),
+                        "quota_exceeded", 429,
+                    ), 429
+                )
+                return
+
+        logger.info("→ POST /v1/agent/run model=%s stream=%s max_iter=%d", model, wants_stream, max_iter)
+        t0 = time.time()
+
+        agent = AgentLoop(
+            model_alias=model,
+            workspace=workspace,
+            max_iterations=min(int(max_iter), 20),  # Cap at 20
+        )
+
+        if wants_stream:
+            # Streaming response via SSE
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "keep-alive")
+            self.send_header("X-Powered-By", "Opsora Agent API")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.flush()
+
+            try:
+                for event in agent.run_streaming(messages, _route_with_fallback):
+                    line = f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    self.wfile.write(line.encode())
+                    self.wfile.flush()
+            except Exception as e:
+                err_event = {"type": "error", "message": str(e)[:500]}
+                line = f"data: {json.dumps(err_event)}\n\n"
+                self.wfile.write(line.encode())
+                self.wfile.flush()
+
+            self._send_sse_done()
+        else:
+            # Non-streaming response
+            result = agent.run(messages, _route_with_fallback)
+
+            elapsed = time.time() - t0
+            logger.info(
+                "← /v1/agent/run iterations=%d tools=%d latency=%.2fs",
+                result["metadata"]["iterations"],
+                result["metadata"]["tool_calls"],
+                elapsed,
+            )
+
+            # Log usage
+            _log_usage({
+                "api_key": token[:8] + "..." if len(token) > 8 else token,
+                "model": model,
+                "real_model": result.get("model", "agent-loop"),
+                "provider": result.get("provider", "agent-loop"),
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_ms": elapsed * 1000,
+                "status": result["status"],
+                "ip": self.client_address[0],
+            })
+
+            # Format as OpenAI-compatible response
+            response = {
+                "id": f"agent-{uuid.uuid4().hex[:12]}",
+                "object": "chat.completion",
+                "created": int(time.time()),
+                "model": result.get("model", model),
+                "choices": [{
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": result["content"],
+                    },
+                    "finish_reason": "stop",
+                }],
+                "agent_metadata": result["metadata"],
+            }
+            self._send_json(response, result["status"])
+
+    def _handle_tool_execute(self, body, token):
+        """Execute a single tool directly.
+
+        POST /v1/agent/tools/execute
+        Body: {tool: str, args: {...}, workspace?: str}
+        Returns: {output: str, tool: str}
+        """
+        from tools import execute_tool, get_tool_names
+
+        tool_name = body.get("tool", "")
+        args = body.get("args", {})
+        workspace = body.get("workspace", os.getenv("AGENT_WORKSPACE", "/app/workspace"))
+
+        if not tool_name:
+            self._send_json(
+                _format_error("'tool' field is required.", "invalid_request_error", 400), 400
+            )
+            return
+
+        if tool_name not in get_tool_names():
+            self._send_json(
+                _format_error(
+                    f"Unknown tool '{tool_name}'. Available: {', '.join(get_tool_names())}",
+                    "invalid_request_error", 400,
+                ), 400
+            )
+            return
+
+        logger.info("→ POST /v1/agent/tools/execute tool=%s", tool_name)
+        output = execute_tool(tool_name, args, workspace)
+
+        self._send_json({
+            "tool": tool_name,
+            "output": output,
+            "output_length": len(output),
+        })
+
 
 # ---------------------------------------------------------------------------
 # Main
@@ -969,6 +1132,9 @@ if __name__ == "__main__":
     logger.info("🚀 Opsora Agent API running on port %s", PORT)
     logger.info("   Models: %s", ", ".join(MODEL_CONFIG.keys()))
     logger.info("   Providers: NVIDIA NIM + OpenRouter + DashScope (fallback)")
+    logger.info("   Agent Loop: ReAct (Think → Act → Observe), max 10 iterations")
+    logger.info("   Agent Tools: read_file, write_file, edit_file, grep_search, glob_search, list_directory, run_command, web_fetch")
+    logger.info("   Agent Endpoints: POST /v1/agent/run, GET /v1/agent/tools, POST /v1/agent/tools/execute")
     logger.info("   Auth: %s", "dev mode (no keys)" if not OPSORA_API_KEYS else f"{len(OPSORA_API_KEYS)} key(s)")
     logger.info("   Usage DB: %s", DB_PATH)
     logger.info("   Streaming: SSE enabled")
