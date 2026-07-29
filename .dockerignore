@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+*.md
+.env
+.env.*
+!.env.example
+dashboard/
+nginx/
+scripts/
+opsora_usage.db
+billing.db
+__pycache__
+*.pyc
+.fly
