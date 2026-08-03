@@ -36,6 +36,25 @@ DEFAULT_WORKSPACE = os.getenv("AGENT_WORKSPACE", "/app/workspace")
 # Security helpers
 # ---------------------------------------------------------------------------
 
+def run_command_enabled():
+    """Decide whether the run_command (shell) tool may execute.
+
+    Controlled by OPSORA_DISABLE_RUN_COMMAND:
+      - "1"/"true"/"yes"/"on"   -> always disabled
+      - "0"/"false"/"no"/"off"  -> always enabled (explicit opt-in)
+      - unset (default)          -> disabled when no client API keys are
+        configured (OPSORA_API_KEYS empty), i.e. open dev mode. In that mode
+        the tool is an unauthenticated remote shell and must stay off unless
+        explicitly enabled.
+    """
+    flag = os.getenv("OPSORA_DISABLE_RUN_COMMAND", "").strip().lower()
+    if flag in ("1", "true", "yes", "on"):
+        return False
+    if flag in ("0", "false", "no", "off"):
+        return True
+    return bool(os.getenv("OPSORA_API_KEYS", "").strip())
+
+
 def _validate_path(filepath, workspace):
     """Validate that a file path is within the workspace and not blocked."""
     p = Path(filepath)
@@ -45,7 +64,9 @@ def _validate_path(filepath, workspace):
     resolved = p.resolve()
     ws = Path(workspace).resolve()
 
-    if not str(resolved).startswith(str(ws)):
+    # is_relative_to (not str.startswith) — startswith would let
+    # "/app/workspace-evil" pass for workspace "/app/workspace".
+    if not resolved.is_relative_to(ws):
         return None, "ERROR: Path is outside the workspace directory."
 
     parts_lower = {part.casefold() for part in resolved.parts}
@@ -365,6 +386,14 @@ def _exec_list_directory(args, workspace):
 
 
 def _exec_run_command(args, workspace):
+    if not run_command_enabled():
+        return (
+            "ERROR: run_command is disabled. Shell execution is off by default "
+            "when no API keys are configured (open dev mode). Set client API "
+            "keys via OPSORA_API_KEYS, or explicitly opt in with "
+            "OPSORA_DISABLE_RUN_COMMAND=0."
+        )
+
     command = args["command"]
     timeout = min(int(args.get("timeout", 30)), 120)
 

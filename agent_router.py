@@ -324,7 +324,11 @@ def _synthesize_results(subtask_results, original_messages):
     For multiple subtasks: concatenate with section headers.
     """
     if len(subtask_results) == 1:
-        return subtask_results[0]["content"]
+        only = subtask_results[0]
+        if only["status"] != 200:
+            # Failed single subtask would otherwise surface an empty body.
+            return "I encountered errors processing your request. Please try rephrasing."
+        return only["content"]
 
     # Sort by intent priority: reasoning > code > vision > creative > general
     priority = {"reasoning": 0, "code": 1, "vision": 2, "creative": 3, "general": 4}

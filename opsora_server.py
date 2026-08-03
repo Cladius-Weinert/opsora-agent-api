@@ -85,7 +85,9 @@ NVIDIA_BASE = "https://integrate.api.nvidia.com/v1"
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 DASHSCOPE_KEY = os.getenv("DASHSCOPE_API_KEY", "")
-DASHSCOPE_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# International endpoint (dashscope-intl) — the China endpoint
+# (dashscope.aliyuncs.com) rejects intl API keys with 401 invalid_api_key.
+DASHSCOPE_BASE = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
 OPSORA_API_KEYS = [k.strip() for k in os.getenv("OPSORA_API_KEYS", "").split(",") if k.strip()]
 PORT = int(os.getenv("PORT", "8080"))
@@ -496,6 +498,28 @@ def _call_provider_streaming(provider_name, endpoint, body, timeout=120):
         )
 
 
+def _error_snippet(result):
+    """Extract a short, secret-free error description from a failed attempt.
+
+    Only the upstream error *message* is surfaced (first 200 chars) — never
+    request bodies, headers, or API keys.
+    """
+    try:
+        if isinstance(result, dict):
+            err = result.get("error")
+            if isinstance(err, dict):
+                msg = err.get("message", "")
+            elif err is not None:
+                msg = str(err)
+            else:
+                msg = json.dumps(result)
+        else:
+            msg = str(result)
+    except Exception:
+        msg = "<unserializable error>"
+    return str(msg)[:200]
+
+
 def _route_with_fallback(model_alias, endpoint, body):
     """Try primary provider, then fallbacks. Returns (result, status, provider_used, real_model)."""
     config = MODEL_CONFIG.get(model_alias)
@@ -503,20 +527,24 @@ def _route_with_fallback(model_alias, endpoint, body):
         # Unknown model — pass through to NVIDIA directly
         return _call_provider("nvidia", endpoint, body) + ("nvidia", model_alias)
 
-    primary_prov, primary_model = config["primary"]
-    body["model"] = primary_model
-    result, status = _call_provider(primary_prov, endpoint, body)
-    if status == 200:
-        return result, status, primary_prov, primary_model
+    attempts = [config["primary"]] + list(config.get("fallbacks", []))
+    result, status = None, None
 
-    # Try fallbacks
-    for fb_prov, fb_model in config.get("fallbacks", []):
-        body["model"] = fb_model
-        result, status = _call_provider(fb_prov, endpoint, body)
+    for idx, (prov, model) in enumerate(attempts):
+        body["model"] = model
+        result, status = _call_provider(prov, endpoint, body)
         if status == 200:
-            return result, status, fb_prov, fb_model
+            return result, status, prov, model
+        logger.warning(
+            "Route %s: attempt %d/%d (%s/%s) FAILED status=%s: %s%s",
+            model_alias, idx + 1, len(attempts), prov, model, status,
+            _error_snippet(result),
+            " — trying next fallback" if idx + 1 < len(attempts)
+            else " — no more fallbacks",
+        )
 
-    # All failed
+    # All failed — return last error, attributed to the primary
+    primary_prov, primary_model = config["primary"]
     return result, status, primary_prov, primary_model
 
 
@@ -527,18 +555,23 @@ def _route_with_fallback_streaming(model_alias, endpoint, body):
         resp, status, err = _call_provider_streaming("nvidia", endpoint, body)
         return resp, status, "nvidia", model_alias, err
 
-    primary_prov, primary_model = config["primary"]
-    body["model"] = primary_model
-    resp, status, err = _call_provider_streaming(primary_prov, endpoint, body)
-    if status == 200 and resp is not None:
-        return resp, status, primary_prov, primary_model, None
+    attempts = [config["primary"]] + list(config.get("fallbacks", []))
+    resp, status, err = None, None, None
 
-    for fb_prov, fb_model in config.get("fallbacks", []):
-        body["model"] = fb_model
-        resp, status, err = _call_provider_streaming(fb_prov, endpoint, body)
+    for idx, (prov, model) in enumerate(attempts):
+        body["model"] = model
+        resp, status, err = _call_provider_streaming(prov, endpoint, body)
         if status == 200 and resp is not None:
-            return resp, status, fb_prov, fb_model, None
+            return resp, status, prov, model, None
+        logger.warning(
+            "Route %s [stream]: attempt %d/%d (%s/%s) FAILED status=%s: %s%s",
+            model_alias, idx + 1, len(attempts), prov, model, status,
+            _error_snippet(err),
+            " — trying next fallback" if idx + 1 < len(attempts)
+            else " — no more fallbacks",
+        )
 
+    primary_prov, primary_model = config["primary"]
     return resp, status, primary_prov, primary_model, err
 
 
@@ -1341,6 +1374,31 @@ if __name__ == "__main__":
         logger.info("   Billing: enabled (DB: billing.db)")
     except Exception as e:
         logger.warning("   Billing: disabled (%s)", e)
+
+    # Security guard: refuse to start with NO authentication at all.
+    # Auth is enforced when either static keys (OPSORA_API_KEYS) or the
+    # billing engine (dynamic issued keys) is active. Without both, every
+    # endpoint — including the agent's shell tool — would be open to the
+    # network. Starting in that mode requires an explicit opt-in.
+    if not OPSORA_API_KEYS and _billing is None:
+        if os.getenv("OPSORA_ALLOW_UNAUTHENTICATED", "").strip().lower() not in (
+            "1", "true", "yes", "on"
+        ):
+            logger.error(
+                "Refusing to start: no authentication configured "
+                "(OPSORA_API_KEYS empty and billing DB unavailable). "
+                "Set OPSORA_API_KEYS, fix BILLING_DB_PATH, or explicitly "
+                "accept an open dev server with OPSORA_ALLOW_UNAUTHENTICATED=1."
+            )
+            raise SystemExit(1)
+        logger.warning(
+            "Starting WITHOUT authentication (OPSORA_ALLOW_UNAUTHENTICATED set). "
+            "run_command stays disabled unless OPSORA_DISABLE_RUN_COMMAND=0."
+        )
+
+    from tools import run_command_enabled
+    logger.info("   run_command tool: %s",
+                "ENABLED" if run_command_enabled() else "disabled")
 
     server = HTTPServer(("0.0.0.0", PORT), OpsoraHandler)
     logger.info("🚀 Opsora Agent API running on port %s", PORT)

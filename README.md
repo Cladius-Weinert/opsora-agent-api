@@ -74,7 +74,9 @@ All configuration is via environment variables (see `.env.example`):
 | Variable | Description | Default |
 |---|---|---|
 | `NVIDIA_API_KEY` | NVIDIA NIM API key | *(required)* |
+| `DASHSCOPE_API_KEY` | Alibaba DashScope key (fallback provider, intl endpoint) | *(empty = off)* |
 | `OPSORA_API_KEYS` | Comma-separated client API keys | *(empty = dev mode)* |
+| `OPSORA_DISABLE_RUN_COMMAND` | Shell-tool guard: `1` force-off, `0` force-on | *(unset = off when no API keys)* |
 | `RATE_LIMIT_RPM` | Requests per minute per key | `60` |
 | `UPSTREAM_TIMEOUT` | Upstream timeout in seconds | `120` |
 | `HOST` | Bind address | `0.0.0.0` |
