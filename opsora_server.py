@@ -13,15 +13,74 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
+from collections import defaultdict
+from typing import Dict, Optional
 
 from agent_router import route_agent_request, route_agent_streaming
 from billing import BillingEngine
 
 # ---------------------------------------------------------------------------
+# Rate Limiter (Token Bucket)
+# ---------------------------------------------------------------------------
+
+class TokenBucketRateLimiter:
+    """Thread-safe token bucket rate limiter per API key."""
+    
+    def __init__(self, rate_per_minute: int = 60, burst: int = 10):
+        self.rate_per_minute = rate_per_minute
+        self.burst = burst
+        self.refill_rate = rate_per_minute / 60.0  # tokens per second
+        self.buckets: Dict[str, tuple[float, float]] = {}  # key -> (tokens, last_refill)
+        self.lock = threading.Lock()
+    
+    def _refill(self, key: str) -> float:
+        now = time.time()
+        tokens, last_refill = self.buckets.get(key, (float(self.burst), now))
+        elapsed = now - last_refill
+        tokens = min(self.burst, tokens + elapsed * self.refill_rate)
+        self.buckets[key] = (tokens, now)
+        return tokens
+    
+    def allow(self, key: str) -> bool:
+        with self.lock:
+            tokens = self._refill(key)
+            if tokens >= 1.0:
+                self.buckets[key] = (tokens - 1.0, time.time())
+                return True
+            return False
+    
+    def get_remaining(self, key: str) -> int:
+        with self.lock:
+            tokens = self._refill(key)
+            return int(tokens)
+
+
+# Global rate limiter instance
+_rate_limiter = TokenBucketRateLimiter(
+    rate_per_minute=int(os.getenv("RATE_LIMIT_RPM", "60")),
+    burst=int(os.getenv("RATE_LIMIT_BURST", "10"))
+)
+
+def check_rate_limit(api_key: str) -> tuple[bool, int]:
+    """Check if request is allowed. Returns (allowed, remaining_requests)."""
+    if not OPSORA_API_KEYS and not _billing:
+        return True, 999  # No auth configured, allow all
+    is_static = api_key in OPSORA_API_KEYS
+    is_dynamic = bool(_billing and _billing.validate_api_key(api_key))
+    if not (is_static or is_dynamic):
+        return False, 0
+    allowed = _rate_limiter.allow(api_key)
+    remaining = _rate_limiter.get_remaining(api_key)
+    return allowed, remaining
+
+
+# ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "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")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+if not NVIDIA_API_KEY:
+    raise RuntimeError("NVIDIA_API_KEY environment variable is required")
 NVIDIA_BASE = "https://integrate.api.nvidia.com/v1"
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
@@ -39,10 +98,6 @@ RETRY_BASE_DELAY = 0.5  # seconds, exponential: 0.5, 1.0
 
 # Billing engine (initialized at startup)
 _billing = None
-
-# ---------------------------------------------------------------------------
-# Model Configuration — Primary + Fallback Chain
-# ---------------------------------------------------------------------------
 
 MODEL_CONFIG = {
     "opsora-fast": {
@@ -524,12 +579,26 @@ logger = logging.getLogger("opsora")
 # CORS Headers
 # ---------------------------------------------------------------------------
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Max-Age": "86400",
-}
+# Configurable CORS origin - set via env var or default to restrictive
+CORS_ALLOWED_ORIGIN = os.getenv("CORS_ALLOWED_ORIGIN", "https://opsora.dev,https://cladius-weinert.github.io")
+CORS_ALLOWED_ORIGINS = [o.strip() for o in CORS_ALLOWED_ORIGIN.split(",") if o.strip()]
+
+def get_cors_headers(request_origin: str = "") -> dict:
+    """Get CORS headers for the given request origin."""
+    if request_origin in CORS_ALLOWED_ORIGINS or "*" in CORS_ALLOWED_ORIGINS:
+        return {
+            "Access-Control-Allow-Origin": request_origin,
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Authorization, Content-Type",
+            "Access-Control-Max-Age": "86400",
+        }
+    # Default restrictive headers
+    return {
+        "Access-Control-Allow-Origin": CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else "https://opsora.dev",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type",
+        "Access-Control-Max-Age": "86400",
+    }
 
 # ---------------------------------------------------------------------------
 # Request Handler
@@ -558,13 +627,31 @@ class OpsoraHandler(BaseHTTPRequestHandler):
     def _authenticate(self):
         auth = self.headers.get("Authorization", "")
         token = auth[7:] if auth.startswith("Bearer ") else ""
-        if OPSORA_API_KEYS and token not in OPSORA_API_KEYS:
+
+        if OPSORA_API_KEYS and token in OPSORA_API_KEYS:
+            pass  # static env-configured key
+        elif _billing and _billing.validate_api_key(token):
+            pass  # dynamically issued key (hashed lookup)
+        elif OPSORA_API_KEYS or _billing:
             self._send_json(_format_error("Invalid API key.", "authentication_error", 401), 401)
             return None
+
+        # Check rate limit
+        allowed, remaining = check_rate_limit(token)
+        if not allowed:
+            self._send_json(
+                _format_error("Rate limit exceeded. Please try again later.", "rate_limit_error", 429),
+                429
+            )
+            return None
+
+        # Store remaining for response headers
+        self._rate_limit_remaining = remaining
         return token
 
     def _send_cors_headers(self):
-        for k, v in CORS_HEADERS.items():
+        origin = self.headers.get("Origin", "")
+        for k, v in get_cors_headers(origin).items():
             self.send_header(k, v)
 
     def _send_json(self, data, status=200):
@@ -575,6 +662,10 @@ class OpsoraHandler(BaseHTTPRequestHandler):
         self._send_cors_headers()
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Connection", "close")
+        # Rate limit headers
+        if hasattr(self, "_rate_limit_remaining") and self._rate_limit_remaining is not None:
+            self.send_header("X-RateLimit-Remaining", str(self._rate_limit_remaining))
+            self.send_header("X-RateLimit-Limit", str(int(os.getenv("RATE_LIMIT_RPM", "60"))))
         self.end_headers()
         self.wfile.write(body)
 
@@ -651,6 +742,22 @@ class OpsoraHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({"error": "Billing not configured"}, 503)
 
+        elif self.path == "/v1/billing/invoices":
+            token = self._authenticate()
+            if token is None:
+                return
+            if _billing:
+                account = _billing._get_account(token)
+                if not account:
+                    self._send_json({"object": "list", "data": []})
+                else:
+                    self._send_json({
+                        "object": "list",
+                        "data": _billing.get_invoices(account["id"]),
+                    })
+            else:
+                self._send_json({"error": "Billing not configured"}, 503)
+
         elif self.path == "/v1/agent/tools":
             if self._authenticate() is None:
                 return
@@ -668,10 +775,19 @@ class OpsoraHandler(BaseHTTPRequestHandler):
 
     # --- POST Routes ---
 
+    # POST routes that do not require an API key:
+    # - /v1/account/register  (how customers GET a key)
+    # - /v1/billing/webhook   (Midtrans callback; authenticity is verified
+    #                          via SHA-512 signature inside the billing engine)
+    _PUBLIC_POST_ROUTES = {"/v1/account/register", "/v1/billing/webhook"}
+
     def do_POST(self):
-        token = self._authenticate()
-        if token is None:
-            return
+        if self.path in self._PUBLIC_POST_ROUTES:
+            token = ""
+        else:
+            token = self._authenticate()
+            if token is None:
+                return
 
         body = self._read_body()
         if body is None:
@@ -686,10 +802,108 @@ class OpsoraHandler(BaseHTTPRequestHandler):
             self._handle_agent_run(body, token)
         elif self.path == "/v1/agent/tools/execute":
             self._handle_tool_execute(body, token)
+        elif self.path == "/v1/account/register":
+            self._handle_register(body)
+        elif self.path == "/v1/billing/checkout":
+            self._handle_checkout(body, token)
+        elif self.path == "/v1/billing/webhook":
+            self._handle_billing_webhook(body)
         else:
             self._send_json(
                 _format_error("Not found.", "invalid_request_error", 404), 404
             )
+
+    # --- Monetization handlers ---
+
+    def _handle_register(self, body):
+        """POST /v1/account/register — self-serve API key issuance.
+
+        Body: {"email": "customer@example.com"}
+        Returns the API key exactly once.
+        """
+        if not _billing:
+            self._send_json({"error": "Billing not configured"}, 503)
+            return
+
+        email = str(body.get("email", "")).strip().lower()
+        if not email or "@" not in email or len(email) > 254:
+            self._send_json(
+                _format_error("A valid 'email' field is required.", "invalid_request_error", 400), 400
+            )
+            return
+
+        result = _billing.issue_api_key(email=email, plan="free")
+        if "error" in result:
+            self._send_json(_format_error(result["error"], "server_error", 500), 500)
+            return
+
+        self._send_json({
+            "object": "account.created",
+            "api_key": result["api_key"],
+            "key_prefix": result["key_prefix"],
+            "account_id": result["account_id"],
+            "plan": result["plan"],
+            "monthly_quota_tokens": result["monthly_quota_tokens"],
+            "warning": "Save this API key now — it is shown only once.",
+        }, 201)
+
+    def _handle_checkout(self, body, token):
+        """POST /v1/billing/checkout — create a Midtrans payment for a plan.
+
+        Body: {"plan": "starter"|"pro"|"business"}
+        Returns the invoice + Midtrans Snap redirect URL (QRIS/GoPay/VA).
+        """
+        if not _billing:
+            self._send_json({"error": "Billing not configured"}, 503)
+            return
+
+        plan = str(body.get("plan", "")).strip().lower()
+        invoice = _billing.create_subscription_invoice(token, plan)
+        if "error" in invoice:
+            self._send_json(
+                _format_error(invoice["error"], "invalid_request_error", 400), 400
+            )
+            return
+
+        charge = _billing.create_midtrans_charge(invoice["id"], invoice["total_idr"])
+        if "error" in charge:
+            self._send_json(
+                _format_error(charge["error"] + " — set MIDTRANS_SERVER_KEY to enable payments.",
+                              "config_error", 503), 503
+            )
+            return
+
+        self._send_json({
+            "object": "checkout.created",
+            "invoice_id": invoice["id"],
+            "plan": plan,
+            "amount_idr": invoice["total_idr"],
+            "order_id": charge["order_id"],
+            "payment_url": charge["redirect_url"],
+            "payment_token": charge["token"],
+        }, 201)
+
+    def _handle_billing_webhook(self, body):
+        """POST /v1/billing/webhook — Midtrans payment notification.
+
+        Signature verification happens inside the billing engine; invalid
+        signatures are rejected there.
+        """
+        if not _billing:
+            self._send_json({"error": "Billing not configured"}, 503)
+            return
+        if not isinstance(body, dict) or not body.get("order_id"):
+            self._send_json(
+                _format_error("Invalid webhook payload.", "invalid_request_error", 400), 400
+            )
+            return
+
+        result = _billing.handle_midtrans_notification(body)
+        if "error" in result:
+            status = 400 if result["error"] in ("Invalid signature", "Invoice not found") else 503
+            self._send_json(_format_error(result["error"], "invalid_request_error", status), status)
+            return
+        self._send_json(result)
 
     def _handle_completions(self, body, token):
         is_chat = "chat" in self.path

@@ -194,7 +194,22 @@ class BillingEngine:
                 CREATE INDEX IF NOT EXISTS idx_txn_ts ON transactions(timestamp);
                 CREATE INDEX IF NOT EXISTS idx_inv_account ON invoices(account_id);
                 CREATE INDEX IF NOT EXISTS idx_accounts_prefix ON accounts(api_key_prefix);
+
+                CREATE TABLE IF NOT EXISTS api_keys (
+                    key_hash TEXT PRIMARY KEY,
+                    key_prefix TEXT NOT NULL,
+                    account_id TEXT NOT NULL,
+                    email TEXT DEFAULT '',
+                    created_at REAL NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    FOREIGN KEY (account_id) REFERENCES accounts(id)
+                );
             """)
+            # Migration: invoices created before plan linkage lack the column.
+            try:
+                conn.execute("ALTER TABLE invoices ADD COLUMN plan TEXT DEFAULT ''")
+            except sqlite3.OperationalError:
+                pass  # column already exists
             conn.commit()
             conn.close()
         logger.info("Billing DB initialized: %s", self.db_path)
@@ -261,6 +276,87 @@ class BillingEngine:
             "rate_limit_rpm": plan_config["rate_limit_rpm"],
             "status": "active",
         }
+
+    # ------------------------------------------------------------------
+    # API Key Management (self-serve issuance, hashed storage)
+    # ------------------------------------------------------------------
+
+    def issue_api_key(self, email="", plan="free"):
+        """Create a new account and issue an API key for it.
+
+        The full key is returned exactly once and stored only as a SHA-256
+        hash — the plaintext key is never persisted.
+
+        Args:
+            email: Customer email (for account recovery / invoices)
+            plan: Initial plan (default free)
+
+        Returns:
+            dict with api_key (shown once), account_id, plan
+        """
+        raw = uuid.uuid4().hex + uuid.uuid4().hex[:8]
+        api_key = f"opsk-{raw}"
+        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+
+        account = self.create_account(api_key, plan)
+        if "error" in account:
+            return account
+
+        with self._lock:
+            conn = self._conn()
+            conn.execute(
+                "INSERT INTO api_keys (key_hash, key_prefix, account_id, email, "
+                "created_at, status) VALUES (?,?,?,?,?,?)",
+                (key_hash, _api_key_prefix(api_key), account["id"], email,
+                 _now(), "active"),
+            )
+            conn.commit()
+            conn.close()
+
+        logger.info("Issued API key %s (account=%s, email=%s)",
+                    _api_key_prefix(api_key), account["id"][:8], email or "-")
+        return {
+            "api_key": api_key,
+            "key_prefix": _api_key_prefix(api_key),
+            "account_id": account["id"],
+            "plan": account["plan"],
+            "monthly_quota_tokens": account["monthly_quota_tokens"],
+        }
+
+    def validate_api_key(self, api_key):
+        """Validate an issued API key by hash lookup.
+
+        Returns:
+            dict with account_id, plan, email, status — or None if the key
+            is unknown or revoked.
+        """
+        if not api_key or not api_key.startswith("opsk-"):
+            return None
+        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        with self._lock:
+            conn = self._conn()
+            row = conn.execute(
+                "SELECT account_id, email, status FROM api_keys WHERE key_hash=?",
+                (key_hash,),
+            ).fetchone()
+            conn.close()
+        if not row or row[2] != "active":
+            return None
+        return {"account_id": row[0], "email": row[1], "status": row[2]}
+
+    def revoke_api_key(self, api_key):
+        """Revoke an issued API key."""
+        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        with self._lock:
+            conn = self._conn()
+            cur = conn.execute(
+                "UPDATE api_keys SET status='revoked' WHERE key_hash=?",
+                (key_hash,),
+            )
+            conn.commit()
+            revoked = cur.rowcount > 0
+            conn.close()
+        return revoked
 
     def _get_account(self, api_key):
         """Get account by API key prefix. Returns row dict or None."""
@@ -569,13 +665,16 @@ class BillingEngine:
     # Invoices
     # ------------------------------------------------------------------
 
-    def generate_invoice(self, account_id, period_start, period_end):
+    def generate_invoice(self, account_id, period_start, period_end, for_plan=None):
         """Generate monthly invoice for a billing period.
 
         Args:
             account_id: Account UUID
             period_start: Unix timestamp for period start
             period_end: Unix timestamp for period end
+            for_plan: Optional plan id this invoice pays for. When set, paying
+                the invoice activates this plan (subscription purchase). When
+                None, the account's current plan is billed (renewal).
 
         Returns:
             dict with invoice details
@@ -592,7 +691,8 @@ class BillingEngine:
                 conn.close()
                 return {"error": "Account not found"}
 
-            plan_config = PLANS.get(account[2], PLANS["free"])
+            billed_plan = for_plan or account[2]
+            plan_config = PLANS.get(billed_plan, PLANS["free"])
             base_amount_idr = plan_config["monthly_price_idr"] or 0
 
             # Calculate overage charges
@@ -608,17 +708,17 @@ class BillingEngine:
 
             conn.execute(
                 "INSERT INTO invoices (id, account_id, period_start, period_end, "
-                "base_amount_idr, overage_amount_idr, total_idr, status) "
-                "VALUES (?,?,?,?,?,?,?,?)",
+                "base_amount_idr, overage_amount_idr, total_idr, status, plan) "
+                "VALUES (?,?,?,?,?,?,?,?,?)",
                 (invoice_id, account_id, period_start, period_end,
-                 base_amount_idr, overage_amount_idr, total_idr, "pending"),
+                 base_amount_idr, overage_amount_idr, total_idr, "pending", billed_plan),
             )
             conn.commit()
             conn.close()
 
         logger.info(
-            "Invoice generated: %s for %s — Rp %s",
-            invoice_id[:8], account[1], f"{total_idr:,}",
+            "Invoice generated: %s for %s — Rp %s (plan=%s)",
+            invoice_id[:8], account[1], f"{total_idr:,}", billed_plan,
         )
         return {
             "id": invoice_id,
@@ -628,8 +728,36 @@ class BillingEngine:
             "base_amount_idr": base_amount_idr,
             "overage_amount_idr": overage_amount_idr,
             "total_idr": total_idr,
+            "plan": billed_plan,
             "status": "pending",
         }
+
+    def create_subscription_invoice(self, api_key, plan):
+        """Create an invoice for purchasing/upgrading to a plan.
+
+        The invoice covers the plan for the current billing period. Paying it
+        (via Midtrans webhook) activates the plan for the account.
+
+        Args:
+            api_key: The account's API key
+            plan: Plan id to purchase (starter, pro, business)
+
+        Returns:
+            dict with invoice details, or {"error": ...}
+        """
+        if plan not in PLANS:
+            return {"error": f"Unknown plan: {plan}"}
+        if plan == "free":
+            return {"error": "Free plan does not require payment"}
+        if PLANS[plan]["monthly_price_idr"] is None:
+            return {"error": "Enterprise plan requires contacting sales"}
+
+        account = self._get_account(api_key)
+        if not account:
+            self.create_account(api_key, "free")
+            account = self._get_account(api_key)
+
+        return self.generate_invoice(account["id"], _cycle_start(), _cycle_end(), for_plan=plan)
 
     def get_invoices(self, account_id):
         """List all invoices for an account."""
@@ -637,7 +765,8 @@ class BillingEngine:
             conn = self._conn()
             rows = conn.execute(
                 "SELECT id, period_start, period_end, base_amount_idr, "
-                "overage_amount_idr, total_idr, status, paid_at, midtrans_order_id "
+                "overage_amount_idr, total_idr, status, paid_at, midtrans_order_id, "
+                "COALESCE(plan, '') "
                 "FROM invoices WHERE account_id=? ORDER BY period_start DESC",
                 (account_id,),
             ).fetchall()
@@ -654,6 +783,7 @@ class BillingEngine:
                 "status": r[6],
                 "paid_at": r[7],
                 "midtrans_order_id": r[8],
+                "plan": r[9],
             }
             for r in rows
         ]
@@ -789,7 +919,8 @@ class BillingEngine:
         with self._lock:
             conn = self._conn()
             invoice = conn.execute(
-                "SELECT id, account_id, total_idr FROM invoices WHERE midtrans_order_id=?",
+                "SELECT id, account_id, total_idr, COALESCE(plan, '') "
+                "FROM invoices WHERE midtrans_order_id=?",
                 (order_id,),
             ).fetchone()
 
@@ -797,34 +928,85 @@ class BillingEngine:
                 conn.close()
                 return {"error": "Invoice not found"}
 
+            invoice_id, account_id, total_idr, invoice_plan = invoice
             paid_at = _now() if new_status == "paid" else None
             conn.execute(
                 "UPDATE invoices SET status=?, paid_at=? WHERE id=?",
-                (new_status, paid_at, invoice[0]),
+                (new_status, paid_at, invoice_id),
             )
 
-            # If paid, update account balance and record payment transaction
+            # If paid, record the payment and activate the purchased plan.
+            # (Previously this only credited balance_idr and never changed
+            # the account plan — customers paid but stayed on Free.)
             if new_status == "paid":
-                conn.execute(
-                    "UPDATE accounts SET balance_idr = balance_idr + ? WHERE id=?",
-                    (invoice[2], invoice[1]),
-                )
                 conn.execute(
                     "INSERT INTO transactions (id, account_id, timestamp, type, "
                     "amount_idr, tokens, model, description) VALUES (?,?,?,?,?,?,?,?)",
-                    (str(uuid.uuid4()), invoice[1], _now(), "payment",
-                     invoice[2], 0, "", f"Payment via Midtrans: {order_id}"),
+                    (str(uuid.uuid4()), account_id, _now(), "payment",
+                     total_idr, 0, "", f"Payment via Midtrans: {order_id}"),
                 )
 
             conn.commit()
             conn.close()
 
-        logger.info("Midtrans notification: order=%s status=%s", order_id, new_status)
-        return {
+        if new_status == "paid" and invoice_plan:
+            activated = self._activate_paid_plan(account_id, invoice_plan, order_id)
+        else:
+            activated = None
+
+        logger.info("Midtrans notification: order=%s status=%s plan=%s",
+                    order_id, new_status, activated or "-")
+        result = {
             "order_id": order_id,
             "status": new_status,
-            "invoice_id": invoice[0],
+            "invoice_id": invoice_id,
         }
+        if activated:
+            result["activated_plan"] = activated
+        return result
+
+    def _activate_paid_plan(self, account_id, plan, order_id=""):
+        """Activate a paid plan for an account after successful payment.
+
+        Starts a fresh billing cycle now with the plan's full quota.
+
+        Returns:
+            plan id when activated, None when nothing changed.
+        """
+        if plan not in PLANS or plan == "free":
+            return None
+        plan_config = PLANS[plan]
+        quota = plan_config["monthly_quota_tokens"] or 0
+
+        with self._lock:
+            conn = self._conn()
+            row = conn.execute(
+                "SELECT plan FROM accounts WHERE id=?", (account_id,)
+            ).fetchone()
+            if not row:
+                conn.close()
+                return None
+            old_plan = row[0]
+
+            conn.execute(
+                "UPDATE accounts SET plan=?, billing_cycle_start=?, "
+                "monthly_quota_tokens=?, tokens_used_this_cycle=0, status='active' "
+                "WHERE id=?",
+                (plan, _now(), quota, account_id),
+            )
+            conn.execute(
+                "INSERT INTO transactions (id, account_id, timestamp, type, "
+                "amount_idr, tokens, model, description) VALUES (?,?,?,?,?,?,?,?)",
+                (str(uuid.uuid4()), account_id, _now(), "plan_activation",
+                 0, quota, "",
+                 f"Plan activated: {old_plan} → {plan} (order {order_id})"),
+            )
+            conn.commit()
+            conn.close()
+
+        logger.info("Plan activated for account %s: %s → %s",
+                    account_id[:8], old_plan, plan)
+        return plan
 
     # ------------------------------------------------------------------
     # Alerts
