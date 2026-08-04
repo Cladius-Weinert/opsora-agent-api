@@ -1,0 +1,6 @@
+{
+  "name": "opsora-gateway",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-01",
+  "account_id": "706ea48aed346fc9493d95ee7f0ea7e3"
+}
