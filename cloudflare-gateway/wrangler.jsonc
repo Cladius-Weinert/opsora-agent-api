@@ -2,5 +2,12 @@
   "name": "opsora-gateway",
   "main": "worker.js",
   "compatibility_date": "2026-08-01",
-  "account_id": "706ea48aed346fc9493d95ee7f0ea7e3"
+  "account_id": "706ea48aed346fc9493d95ee7f0ea7e3",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "opsora-auth",
+      "database_id": "a084bf57-9b1c-48bf-9095-3c4f84aaaee8"
+    }
+  ]
 }
